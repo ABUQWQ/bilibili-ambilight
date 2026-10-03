@@ -1,0 +1,10 @@
+# Generated and local-only files. The loadable extension in ambilight-bilibili/
+# stays tracked so the unpacked build can be compared across commits.
+
+node_modules/
+_tools/probe-captures/
+
+# Secrets. Both source trees keep a Sentry auth token in .env.
+.env
+.env.*
+!.env.example

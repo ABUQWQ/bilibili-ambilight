@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "name": "Bilibili 氛围灯",
+  "description": "为哔哩哔哩投稿视频添加动态氛围灯。",
+  "version": "0.0.0",
+  "homepage_url": "https://www.bilibili.com/",
+  "author": "Bilibili Ambient Light contributors",
+  "icons": {
+    "16": "images/icon-16.png",
+    "32": "images/icon-32.png",
+    "128": "images/icon-128.png"
+  },
+  "minimum_chrome_version": "121",
+  "action": {
+    "default_icon": {
+      "16": "images/icon-16.png",
+      "24": "images/icon-24.png",
+      "32": "images/icon-32.png"
+    },
+    "default_popup": "options.html"
+  },
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.bilibili.com/video/*"
+      ],
+      "js": [
+        "scripts/content.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.bilibili.com/video/*"
+      ],
+      "js": [
+        "scripts/diagnostics-page.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "styles/content.css",
+        "scripts/content-main.js",
+        "images/noise-1.png",
+        "images/noise-2.png",
+        "images/noise-3.png"
+      ],
+      "matches": [
+        "https://www.bilibili.com/*"
+      ]
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "permissions": [
+    "storage"
+  ]
+}

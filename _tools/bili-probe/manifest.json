@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Bili Ambientlight Probe",
+  "version": "1.1.0",
+  "description": "Capture Bilibili watch page screenshots and diagnostics.",
+  "permissions": ["downloads", "tabs", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.bilibili.com/video/*"],
+      "js": ["probe.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+/* Bilibili page-chrome parity with the YouTube build.
+   Kept in a separate partial so the YouTube-derived content.scss stays readable. */
+
+/* 1. Horizontal page scroll.
+   The ambient projectors are intentionally overflow:visible so their blur can
+   spread, but the right-side projector then paints past the viewport and
+   creates ~50px of scrollable empty space. Clip the ambient layer at the
+   viewport (and the page at the x axis) without creating a scroll container,
+   so position:sticky keeps working. */
+
+html[data-ambientlight-enabled],
+html[data-ambientlight-enabled] body {
+  max-width: 100%;
+  overflow-x: clip !important;
+}
+
+html[data-ambientlight-enabled] #app,
+html[data-ambientlight-enabled] #bilibili-player,
+html[data-ambientlight-enabled] .bpx-player-container {
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+html[data-ambientlight-enabled] .bpx-player-container {
+  isolation: isolate;
+}
+
+/* Do not touch the player's internal stacking order.
+   Bilibili paints the danmaku layer (`.bpx-player-render-dm-wrap`) as a later
+   sibling of `.bpx-player-video-perch` and relies on plain document order, and
+   it pins `.bpx-player-control-wrap` with `position:absolute; bottom:0;
+   z-index:75`. Giving the video wrap a positive z-index paints the video over
+   the danmaku; forcing the control wrap to `position:relative` drags the whole
+   control bar out of the video area (it ends up under the danmaku input row).
+   The ambient canvas already sits behind `#app` (z-index:-1), so neither hack
+   is needed. */
+
+html[data-ambientlight-enabled] body > .ambientlight .ambientlight__container,
+html[data-ambientlight-enabled] .bpx-player-container > .ambientlight .ambientlight__container,
+html[data-ambientlight-enabled] .bpx-player-video-area > .ambientlight .ambientlight__container {
+  overflow: clip !important;
+}
+
+/* The glow box is intentionally taller than one viewport, so the container
+   that clips it has to be at least as tall. Leaving the container at its
+   inherited `height: 100vh` cut the glow off along a perfectly straight line
+   at exactly document y = 100vh, which is what surfaced as the "bottom is cut
+   off" band across the comment list. Both boxes read the same variable so the
+   two numbers can never drift apart again. */
+html[data-ambientlight-enabled]:not(:has(.bpx-player-container[data-screen='full'])):not(:has(.bpx-player-container[data-screen='web'])) body > .ambientlight .ambientlight__container {
+  height: var(--bili-glow-height) !important;
+  min-height: var(--bili-glow-height) !important;
+}
+
+/* 2. Player chrome.
+   Bilibili draws an opaque black docker behind the player; with the ambient
+   page glow that reads as a hard black frame. Remove the frame but keep the
+   video surface itself black so letterboxed video still looks correct. */
+
+html[data-ambientlight-enabled] .bpx-docker,
+html[data-ambientlight-enabled] .bpx-docker-major,
+html[data-ambientlight-enabled] .bpx-player-container {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html[data-ambientlight-enabled] .bpx-docker::before,
+html[data-ambientlight-enabled] .bpx-docker-major::before {
+  background: transparent !important;
+  opacity: 0 !important;
+}
+
+html[data-ambientlight-enabled] .bpx-player-video-area,
+html[data-ambientlight-enabled] .bpx-player-video-wrap {
+  background-color: #000 !important;
+}
+
+/* 3. Ambient-tinted chrome surfaces.
+   Search, the danmaku list header/footer, and the danmaku input row keep an
+   opaque theme colour (black in night mode). Tint them with the sampled
+   ambient colour and blur the page behind them, matching the YouTube build. */
+
+html[data-ambientlight-enabled] {
+  --bili-chrome-base: rgba(18, 19, 22, .58);
+  --bili-chrome-base-strong: rgba(18, 19, 22, .76);
+  --bili-chrome-border: rgba(255, 255, 255, .14);
+  --bili-chrome-shadow: 0 8px 22px rgba(0, 0, 0, .28);
+  --bili-chrome-tint: linear-gradient(rgb(var(--bili-ambient-rgb) / .16), rgb(var(--bili-ambient-rgb) / .16));
+}
+
+html[data-ambientlight-enabled]:not(.night-mode) {
+  --bili-chrome-base: rgba(255, 255, 255, .64);
+  --bili-chrome-base-strong: rgba(255, 255, 255, .82);
+  --bili-chrome-border: rgba(0, 0, 0, .08);
+  --bili-chrome-shadow: 0 8px 22px rgba(0, 0, 0, .12);
+  --bili-chrome-tint: linear-gradient(rgb(var(--bili-ambient-rgb) / .1), rgb(var(--bili-ambient-rgb) / .1));
+}
+
+html[data-ambientlight-enabled] #nav-searchform,
+html[data-ambientlight-enabled] .bui-collapse-header,
+html[data-ambientlight-enabled] .bpx-player-video-inputbar,
+html[data-ambientlight-enabled] .bpx-player-dm-btn-history,
+html[data-ambientlight-enabled] .bpx-player-dm-btn-footer {
+  background-color: var(--bili-chrome-base) !important;
+  background-image: var(--bili-chrome-tint) !important;
+  border: 1px solid var(--bili-chrome-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+html[data-ambientlight-enabled] #nav-searchform:hover,
+html[data-ambientlight-enabled] #nav-searchform:focus-within,
+html[data-ambientlight-enabled] .bui-collapse-header:hover,
+html[data-ambientlight-enabled] .bpx-player-video-inputbar:focus-within {
+  background-color: var(--bili-chrome-base-strong) !important;
+  border-color: rgb(var(--bili-ambient-rgb) / .45) !important;
+  box-shadow: var(--bili-chrome-shadow) !important;
+}
+
+/* A vertical gradient inside a 56px bar shows its mid colour along the bar's
+   left and right ends, which reads as another sharp rectangle. A flat tint
+   keeps the row readable without introducing an edge. */
+html[data-ambientlight-enabled] .bpx-player-sending-bar {
+  background: rgb(var(--bili-ambient-rgb) / .16) !important;
+}
+
+/* 4. Whole-page ambient wash (YouTube parity).
+   The YouTube build tints every chrome surface across the page: the right
+   rail, the toolbar row under the player, the description block and the
+   comment area. Bilibili paints those surfaces with their own opaque
+   backgrounds and the glow layer was pinned to the top of the document, so
+   everything below the fold went flat/cut off. Fix: pin the glow layer to
+   the viewport and let the page chrome stay translucent over it. */
+
+/* Anchor the wash to the top of the document, like the YouTube build does, so
+   it scrolls away with the first screen instead of following the viewport down
+   the (very tall) comment list.
+
+   Sizing note: the previous 100vh box left the mask at ~79% alpha where the
+   element ended, which painted a visible horizontal cut across the comments.
+   The gradient below is chosen so alpha is guaranteed to reach zero well
+   before the element's bottom edge:
+
+     element 165vh, centre at 18%  -> cy = 29.7vh, bottom edge 135.3vh away
+     120% vertical radius          -> 198vh, so the bottom edge sits at 68%
+     gradient reaches 0 at 62%     -> y = 152vh, i.e. past the 97.5vh fold
+
+   Everything inside the first viewport therefore stays fully lit and the wash
+   fades out between roughly one and one and a half screens down. */
+html[data-ambientlight-enabled] body > .ambientlight .bili-ambientlight-page-glow {
+  position: absolute !important;
+  inset: 0 auto auto 0 !important;
+  width: 100% !important;
+  height: var(--bili-glow-height) !important;
+  -webkit-mask-image: radial-gradient(
+    125% 120% at 50% 18%,
+    #000 0,
+    #000 42%,
+    rgba(0, 0, 0, .55) 54%,
+    transparent 62%
+  );
+  mask-image: radial-gradient(
+    125% 120% at 50% 18%,
+    #000 0,
+    #000 42%,
+    rgba(0, 0, 0, .55) 54%,
+    transparent 62%
+  );
+}
+
+/* Surfaces that would otherwise block the wash. */
+html[data-ambientlight-enabled] .left-container,
+html[data-ambientlight-enabled] .right-container,
+html[data-ambientlight-enabled] #mirror-vdcon,
+html[data-ambientlight-enabled] .video-info-container,
+html[data-ambientlight-enabled] .video-toolbar-container,
+html[data-ambientlight-enabled] .video-desc-container,
+html[data-ambientlight-enabled] .video-desc-container .desc-info,
+html[data-ambientlight-enabled] #v_desc,
+html[data-ambientlight-enabled] .video-tag-container,
+html[data-ambientlight-enabled] .video-argue,
+html[data-ambientlight-enabled] #commentapp,
+html[data-ambientlight-enabled] bili-comments,
+html[data-ambientlight-enabled] .bili-comments-header-renderer,
+html[data-ambientlight-enabled] .rcmd-tab,
+html[data-ambientlight-enabled] .video-pod,
+html[data-ambientlight-enabled] .video-pod__header,
+html[data-ambientlight-enabled] .video-pod__body,
+html[data-ambientlight-enabled] .video-pod__item,
+html[data-ambientlight-enabled] .video-page-card-small,
+html[data-ambientlight-enabled] .bili-video-card,
+html[data-ambientlight-enabled] .bili-video-card__wrap {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* No per-element tint. Painting a gradient on each block (info, toolbar,
+   description, comments) produces a rectangle with four hard edges, because
+   each block is shorter than the gradient's 40vh/96vh stops and therefore only
+   ever shows the first colour. The only light source must stay the single
+   continuous blurred canvas, so these surfaces are plain transparent and the
+   page shows one seamless wash. */
+
+html[data-ambientlight-enabled] .right-container,
+html[data-ambientlight-enabled] .recommend-list-v1,
+html[data-ambientlight-enabled] .video-toolbar-container,
+html[data-ambientlight-enabled] .video-info-container,
+html[data-ambientlight-enabled] .video-desc-container,
+html[data-ambientlight-enabled] #commentapp {
+  background-image: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Keep the comment web component's own surfaces from painting over the wash.
+   These tokens are inherited into the shadow tree. */
+html[data-ambientlight-enabled] #commentapp,
+html[data-ambientlight-enabled] bili-comments {
+  --bg1: transparent;
+  --bg2: transparent;
+  --graph_bg_regular: transparent;
+}
