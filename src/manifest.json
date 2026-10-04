@@ -3,7 +3,7 @@
   "name": "Bilibili 氛围灯",
   "description": "为哔哩哔哩投稿视频添加动态氛围灯。",
   "version": "0.0.0",
-  "homepage_url": "https://www.bilibili.com/",
+  "homepage_url": "https://github.com/ABUQWQ/bilibili-ambilight",
   "author": "Bilibili Ambient Light contributors",
   "icons": {
     "16": "images/icon-16.png",

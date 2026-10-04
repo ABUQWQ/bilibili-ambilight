@@ -4,14 +4,14 @@
   "description": "为哔哩哔哩投稿视频添加氛围灯的浏览器扩展",
   "repository": {
     "type": "git",
-    "url": "https://www.bilibili.com/"
+    "url": "https://github.com/ABUQWQ/bilibili-ambilight.git"
   },
   "author": "Bilibili Ambient Light contributors",
   "license": "ISC",
   "bugs": {
-    "url": "https://www.bilibili.com/"
+    "url": "https://github.com/ABUQWQ/bilibili-ambilight/issues"
   },
-  "homepage": "https://www.bilibili.com/",
+  "homepage": "https://github.com/ABUQWQ/bilibili-ambilight",
   "type": "module",
   "scripts": {
     "build:manifest": "node manifest-copy.js",
@@ -22,7 +22,7 @@
     "build:styles": "run-p build:styles:content build:styles:options",
     "build:scripts:rollup": "rollup -c",
     "build:scripts": "run-s build:scripts:rollup",
-    "build": "run-s build:scripts build:styles build:manifest build:html build:images"
+    "build": "node build.js"
   },
   "engines": {
     "node": "22.5.1"
@@ -38,14 +38,11 @@
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-eslint": "^9.0.5",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "@sentry/browser": "^9.27.0",
-    "@sentry/cli": "^2.46.0",
     "babel-plugin-transform-replace-expressions": "^0.2.0",
     "copyfiles": "^2.4.1",
     "eslint": "^9.28.0",
     "globals": "^16.2.0",
     "npm-run-all": "^4.1.5",
-    "replace-in-file": "^8.3.0",
     "rollup": "^4.42.0",
     "sass": "^1.62.1"
   },

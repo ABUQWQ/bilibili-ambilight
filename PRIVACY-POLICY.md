@@ -1,14 +1,23 @@
-# Privacy policy
-- This extension only runs on tabs that start with the url https://www.youtube.com. The extension will only activate the ambient light effect on YouTube's /watch page
-- The only requests being sent are crash reports. (But crash reports can be turned off.) No other requests are sent to any webserver, website or api. But in case a crash occurs the report is sent to [Sentri.io](https://sentry.io) and will always be deleted after 30 days. Because the only goal of these crash reports is to fix the crash.
+# 隐私政策
 
-## Crash report data
-Crash reports, and individual groups of data, can be turned off. But in case a crash report is sent it could contain:
-- The url and video ID being watched at the time of the crash
-- Anonymous technical data
-    - Browser version
-    - Operating system version
-    - Display capabilities
-    - Videoplayer state (Does not contain the video id or title)
-    - YouTube layout state (Does not contain your YouTube account data)
-- Ambient light state and error information
+Bilibili 氛围灯是一个在本地运行的浏览器扩展，仅在
+`https://www.bilibili.com/video/*` 页面上工作。
+
+## 数据处理
+
+- 扩展不会向远程服务器发送播放记录、账号信息、视频标题或评论内容。
+- 扩展不包含任何远程崩溃上报服务。
+- 用户设置保存在浏览器的扩展存储中，用于在下次打开页面时恢复设置。
+- 生产构建不会向页面注入诊断接口。
+
+## 调试诊断
+
+开发者可以通过调试构建启用诊断桥，主动导出播放器尺寸、页面布局、扩展设置和错误信息。诊断数据只在用户主动调用导出方法时复制到剪贴板，不会自动上传。
+
+请在公开提交诊断 JSON 前删除 URL 参数、账号相关内容和其他个人信息。
+
+## 权限
+
+扩展只申请 `storage` 权限，用于保存本地设置。页面匹配范围限制为 Bilibili 投稿视频页面。
+
+如需了解实现细节，请查看项目源码和 [GitHub 仓库](https://github.com/ABUQWQ/bilibili-ambilight)。

@@ -1,73 +1,80 @@
-[![Google Chrome Web rating](https://img.shields.io/chrome-web-store/rating/paponcgjfojgemddooebbgniglhkajkj?logo=googlechrome&color=brightgreen)](https://chrome.google.com/webstore/detail/youtube-ambilight/paponcgjfojgemddooebbgniglhkajkj) [![Google Chrome users](https://img.shields.io/chrome-web-store/users/paponcgjfojgemddooebbgniglhkajkj?logo=googlechrome&color=blue)](https://chrome.google.com/webstore/detail/youtube-ambilight/paponcgjfojgemddooebbgniglhkajkj) &nbsp; [![Microsoft Edge rating](https://img.shields.io/badge/dynamic/json?label=rating&suffix=/5&query=%24.averageRating&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fcmggdjjjfembmemhleknmfpakmgggjcf&logo=embarcadero&color=brightgreen)](https://microsoftedge.microsoft.com/addons/detail/cmggdjjjfembmemhleknmfpakmgggjcf) [![Microsoft Edge users](https://img.shields.io/badge/dynamic/json?label=users&query=%24.activeInstallCount&url=https%3A%2F%2Fmicrosoftedge.microsoft.com%2Faddons%2Fgetproductdetailsbycrxid%2Fcmggdjjjfembmemhleknmfpakmgggjcf&logo=embarcadero&color=blue)](https://microsoftedge.microsoft.com/addons/detail/cmggdjjjfembmemhleknmfpakmgggjcf) &nbsp; [![Firefox rating](https://img.shields.io/amo/rating/ambient-light-for-youtube?logo=firefoxbrowser)](https://addons.mozilla.org/en-US/firefox/addon/ambient-light-for-youtube/) [![Firefox users](https://img.shields.io/amo/users/ambient-light-for-youtube?logo=firefoxbrowser&color=blue)](https://addons.mozilla.org/en-US/firefox/addon/ambient-light-for-youtube/) &nbsp; [![Opera rating](https://img.shields.io/badge/rating-4.4/5-brightgreen?logo=opera)](https://addons.opera.com/nl/extensions/details/youtube-ambilight/) [![Opera users](https://img.shields.io/badge/downloads-20k-blue?logo=opera)](https://addons.opera.com/nl/extensions/details/youtube-ambilight/)
+# Bilibili 氛围灯
 
-<a href="https://ko-fi.com/G2G59EK8L" rel="noopener">
-  <img align="right" src="https://github.com/WesselKroos/youtube-ambilight/blob/master/src/images/donate.svg?raw=true" title="Support me via a donation">
-</a>
+为哔哩哔哩投稿视频添加跟随画面的动态氛围光晕，让播放器和页面背景拥有更自然的沉浸感。
 
-[![Ambient light for YouTube™](https://github.com/WesselKroos/youtube-ambilight/blob/master/assets/heading.png?raw=true)](https://github.com/WesselKroos/youtube-ambilight#readme)
+## 功能范围
 
-![Preview](https://github.com/WesselKroos/chrome-youtube-ambilight/blob/master/assets/readme/screenshot-1.jpg?raw=true)
+- 支持 `https://www.bilibili.com/video/*` 投稿视频页面。
+- 支持普通、宽屏、Web 全屏和原生全屏播放器模式。
+- 光晕会延伸到播放器周围、右侧推荐区、工具栏、简介和评论区域。
+- 设置保存在浏览器本地，不上传账号、视频或播放记录。
 
+当前版本主要面向 Chromium 浏览器（Chrome、Edge、Opera、Vivaldi）。Bilibili 页面结构变化可能影响部分布局，遇到问题请附上浏览器版本、播放器模式和截图。
 
-# Ambient light for YouTube™
-Immerse yourself in YouTube videos with ambient light!
+## 安装
 
-## Installation
-Go to the extensions site of your browser and add the extension:
+本项目目前以开发者模式加载，未发布到浏览器商店。
 
-[![Google Chrome Web Store](https://github.com/WesselKroos/youtube-ambilight/blob/master/assets/browsers/Google%20Chrome.png?raw=true)](https://chrome.google.com/webstore/detail/youtube-ambilight/paponcgjfojgemddooebbgniglhkajkj)
+1. 下载或克隆本仓库。
+2. 安装 Node.js `22.5.1` 或兼容版本。
+3. 在项目目录执行 `npm ci`。
+4. 执行 `npm run build`。
+5. 打开 `chrome://extensions/` 或 Edge 的扩展管理页。
+6. 开启“开发者模式”，点击“加载已解压的扩展程序”。
+7. 选择项目生成的 `dist` 目录。
 
-[![Microsoft Edge Store](https://github.com/WesselKroos/chrome-youtube-ambilight/blob/master/assets/browsers/Microsoft%20Edge.png?raw=true)](https://microsoftedge.microsoft.com/addons/detail/cmggdjjjfembmemhleknmfpakmgggjcf)
+源码修改后重新执行 `npm run build`，再在扩展管理页点击刷新。
 
-[![Firefox Add-ons](https://github.com/WesselKroos/chrome-youtube-ambilight/blob/master/assets/browsers/Firefox.png?raw=true)](https://addons.mozilla.org/en-US/firefox/addon/ambient-light-for-youtube/)
+## 调试诊断
 
-[![Opera addons](https://github.com/WesselKroos/youtube-ambilight/blob/master/assets/browsers/Opera.png?raw=true)](https://addons.opera.com/nl/extensions/details/youtube-ambilight/)
+生产构建默认不向页面注入诊断桥。如需排查播放器、路由或光晕布局问题，可启用调试构建：
 
+PowerShell：
 
-## Minimum requirements
+```powershell
+$env:BILIBILI_AMBIENTLIGHT_DIAGNOSTICS = "1"
+npm run build
+```
 
-### Performance
-A video card with a score of at least 1000 points in the PassMark Video Card Benchmark is recommended.
-Check your video card's score here:
+macOS/Linux：
 
-https://www.videocardbenchmark.net/gpu_list.php
+```bash
+BILIBILI_AMBIENTLIGHT_DIAGNOSTICS=1 npm run build
+```
 
-With a score lower than 1000 the extension will still work but it is likely that the YouTube video page will be slow and/or stuttering.
-> To troubleshoot performance problems or maximize the performance you can follow the checks and steps in the [Troubleshoot guide](https://github.com/WesselKroos/youtube-ambilight/blob/master/TROUBLESHOOT.md)
+刷新视频页后，可在开发者工具控制台使用 `__bilibiliAmbientlightDiagnostics.dump()` 查看诊断数据，使用 `.copy()` 复制 JSON。
 
+## 开发
 
-### Browser versions
-| Browser  | Version | Reason |
-| -------- | ------- | ------ |
-| Chromium | 80      | [Optional chaining operator (?.)](https://caniuse.com/mdn-javascript_operators_optional_chaining) |
-| Firefox  | 74      | [Optional chaining operator (?.)](https://caniuse.com/mdn-javascript_operators_optional_chaining) |
+```bash
+npm ci
+npm run build
+```
 
+构建结果位于 `dist/`，仅用于本地加载，不提交到 Git。生产构建不会包含页面诊断桥；调试构建由 `BILIBILI_AMBIENTLIGHT_DIAGNOSTICS=1` 控制。
 
-## Privacy & Security
-Read the [privacy policy](/PRIVACY-POLICY.md)
+项目的主要入口位于：
 
+- `src/scripts/content.js`：等待 Bilibili 页面资源并加载扩展。
+- `src/scripts/content-main.js`：播放器绑定、SPA 路由和设置入口。
+- `src/scripts/libs/ambientlight.js`：光晕渲染和播放器生命周期。
+- `src/styles/_bilibili-parity.scss`：Bilibili 页面布局和背景适配。
 
-## Report, request or contribute
-Feel free to 
-- contribute to the project at [/youtube-ambilight](https://github.com/WesselKroos/youtube-ambilight)
-- report bugs at [/youtube-ambilight/issues](https://github.com/WesselKroos/youtube-ambilight/issues)
-- request a feature at [/youtube-ambilight/issues](https://github.com/WesselKroos/youtube-ambilight/issues)
-- or ask a question at [/youtube-ambilight/issues](https://github.com/WesselKroos/youtube-ambilight/issues)
+## 已知限制
 
+- 只匹配 `www.bilibili.com/video/*`，不覆盖番剧、直播、嵌入播放器和移动端页面。
+- 页面结构或播放器 class 变化时，可能需要更新选择器和布局适配。
+- WebGL/Canvas 性能取决于浏览器硬件加速和显卡驱动。
+- 某些浏览器或显卡组合可能需要降低光晕质量来避免掉帧。
 
-## Support me
-[![Support me via a donation](https://github.com/WesselKroos/youtube-ambilight/blob/master/src/images/donate.svg?raw=true)](https://ko-fi.com/G2G59EK8L)
+## 问题反馈与贡献
 
+请在 [GitHub Issues](https://github.com/ABUQWQ/bilibili-ambilight/issues) 中提供：
 
-## Development
-1. Install [Node (LTS)](https://nodejs.org/en/download/)
-2. In the terminal/commandline enter `npm install`.
-3. In the terminal/commandline enter `npm run build`. A `/dist` folder will be generated which contains all the generated files of the extension.
-4. Add the extension to Chrome:
-    1. In Chrome go to the url [chrome://extensions/](chrome://extensions/).
-    2. Turn on the `Developer mode` toggle.
-    3. Click `Load unpacked` and select the `/dist` folder.
-    4. `Ambient light for YouTube™` has been added to the list of extensions.
-5. After you've modified a file in the `/src` folder follow these steps:
-    1. In the terminal/commandline enter `npm run build`
-    2. In Chrome go to the url [chrome://extensions/](chrome://extensions/) and click the refresh/update button in the card of the extension.
+- 浏览器和版本；
+- 操作系统和显卡；
+- Bilibili 播放器模式；
+- 复现步骤和截图；
+- 如有需要，附上调试构建导出的诊断 JSON。
+
+仓库地址：[ABUQWQ/bilibili-ambilight](https://github.com/ABUQWQ/bilibili-ambilight)

@@ -1,0 +1,46 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.5.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Verify production manifest
+        shell: bash
+        run: |
+          node -e "const p=require('./package.json'); const m=require('./dist/manifest.json'); const hasDiagnostics=(m.content_scripts||[]).some(x=>(x.js||[]).some(path=>path.includes('diagnostics-page.js'))); if(m.version!==p.version) throw new Error('manifest version mismatch'); if(hasDiagnostics) throw new Error('diagnostics bridge leaked into production build');"
+
+      - name: Check generated JavaScript
+        shell: bash
+        run: |
+          for file in dist/scripts/*.js; do
+            node --check "$file"
+          done
+
+      - name: Build diagnostics bundle
+        env:
+          BILIBILI_AMBIENTLIGHT_DIAGNOSTICS: "1"
+        run: npm run build
+
+      - name: Verify diagnostics manifest
+        shell: bash
+        run: |
+          node -e "const m=require('./dist/manifest.json'); if(!(m.content_scripts||[]).some(x=>(x.js||[]).some(path=>path.includes('diagnostics-page.js')))) throw new Error('diagnostics bridge missing from debug build');"

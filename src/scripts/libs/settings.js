@@ -10,7 +10,7 @@ import {
   VIEW_FULLSCREEN,
   setDisplayErrorHandler,
 } from './generic';
-import SentryReporter from './errors/sentry-reporter';
+import ErrorReporter from './errors/error-reporter';
 import { copy as copyDiagnostics, report } from './diagnostics';
 import SettingsConfig, {
   prepareSettingsConfigOnce,
@@ -2303,7 +2303,7 @@ export default class Settings {
       }
 
       if (ex.message !== 'An unexpected error occurred')
-        SentryReporter.captureException(ex);
+        ErrorReporter.captureException(ex);
 
       this.logStorageWarningOnce(
         `Failed to save settings ${JSON.stringify(
@@ -2408,7 +2408,7 @@ export default class Settings {
         '氛围灯已更新并加入新设置\n点击查看更新内容';
       this.showingUpdatesMessage = true;
     } catch (ex) {
-      SentryReporter.captureException(ex);
+      ErrorReporter.captureException(ex);
     }
   };
 

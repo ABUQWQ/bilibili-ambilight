@@ -1,13 +1,22 @@
-import { copyFileSync, mkdirSync, existsSync } from 'fs';
-import { replaceInFileSync } from 'replace-in-file';
+import {
+  copyFileSync,
+  mkdirSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from 'fs';
 import packageJson from './package.json' with { type: 'json' };
 
-const options = {
-  files: 'dist/manifest.json',
-  from: /"version": "0.0.0"/g,
-  to: `"version": "${packageJson.version}"`,
+if(!existsSync('dist')) mkdirSync('dist');
+const manifestPath = 'dist/manifest.json';
+const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'));
+manifest.version = packageJson.version;
+
+if (process.env.BILIBILI_AMBIENTLIGHT_DIAGNOSTICS !== '1') {
+  manifest.content_scripts = manifest.content_scripts.filter(
+    (entry) => !entry.js?.includes('scripts/diagnostics-page.js')
+  );
 }
 
-if(!existsSync('dist')) mkdirSync('dist');
-copyFileSync('src/manifest.json', options.files);
-replaceInFileSync(options);
+copyFileSync('src/manifest.json', manifestPath);
+writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);

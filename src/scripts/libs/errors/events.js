@@ -1,5 +1,5 @@
 import { on } from '../generic';
-import SentryReporter, { crashOptions } from './sentry-reporter';
+import ErrorReporter from './error-reporter';
 import { AmbientlightError } from './ambient-light-error';
 
 export class ErrorEvents {
@@ -58,7 +58,7 @@ export class ErrorEvents {
     };
     this.list = [];
 
-    SentryReporter.captureException(
+    ErrorReporter.captureException(
       new AmbientlightError(
         message ?? 'Closed or hid the page with pending errors',
         details
@@ -67,9 +67,6 @@ export class ErrorEvents {
   };
 
   add = (type, details = {}) => {
-    if (!crashOptions?.technical) {
-      details = undefined;
-    }
     const time = Math.round(performance.now()) / 1000;
 
     if (this.list.length) {

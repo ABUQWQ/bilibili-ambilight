@@ -4,7 +4,7 @@ import {
   SafeOffscreenCanvas,
   wrapErrorHandler,
 } from './generic';
-import SentryReporter from './errors/sentry-reporter';
+import ErrorReporter from './errors/error-reporter';
 import { workerFromCode } from './worker';
 
 const workerCode = function () {
@@ -1201,7 +1201,7 @@ export default class BarDetection {
         }
         if (e.data.error) {
           appendErrorStack(stack, e.data.error);
-          SentryReporter.captureException(e.data.error);
+          ErrorReporter.captureException(e.data.error);
         }
       };
       this.worker.onerror = (err) => {
@@ -1216,7 +1216,7 @@ export default class BarDetection {
         if (this.onWorkerRejectListener) {
           return this.onWorkerRejectListener(err);
         }
-        SentryReporter.captureException(err);
+        ErrorReporter.captureException(err);
       };
     }
 

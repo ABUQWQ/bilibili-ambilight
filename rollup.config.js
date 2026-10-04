@@ -28,7 +28,10 @@ const common = {
   ],
 };
 
-const scripts = ['background', 'content', 'content-main', 'diagnostics-page'];
+const diagnosticsEnabled =
+  process.env.BILIBILI_AMBIENTLIGHT_DIAGNOSTICS === '1';
+const scripts = ['background', 'content', 'content-main'];
+if (diagnosticsEnabled) scripts.push('diagnostics-page');
 
 export default scripts.map((script) => ({
   ...common,

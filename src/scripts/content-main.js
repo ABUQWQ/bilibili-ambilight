@@ -1,6 +1,6 @@
 import { on, setErrorHandler, setWarning, wrapErrorHandler } from './libs/generic';
 import Ambientlight from './libs/ambientlight';
-import SentryReporter from './libs/errors/sentry-reporter';
+import ErrorReporter from './libs/errors/error-reporter';
 import {
   getEnvironment,
   installDiagnostics,
@@ -11,7 +11,7 @@ import {
 installDiagnostics();
 report('main-script-loaded', getEnvironment());
 
-setErrorHandler((ex) => SentryReporter.captureException(ex));
+setErrorHandler((ex) => ErrorReporter.captureException(ex));
 
 const isBilibiliVideoPage = () => {
   if (location.hostname !== 'www.bilibili.com') return false;

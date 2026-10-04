@@ -1,4 +1,4 @@
-import SentryReporter from './errors/sentry-reporter';
+import ErrorReporter from './errors/error-reporter';
 import { AmbientlightError } from './errors/ambient-light-error';
 import {
   canvasWebGLCrashTips,
@@ -428,7 +428,7 @@ export default class ProjectorWebGL {
     try {
       return (await storage.get('majorPerformanceCaveatDetected')) || false;
     } catch (ex) {
-      SentryReporter.captureException(ex);
+      ErrorReporter.captureException(ex);
     }
   }
 

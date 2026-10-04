@@ -22,9 +22,7 @@ import {
   setStyleProperty,
   setWarning,
 } from './generic';
-import SentryReporter, {
-  parseSettingsToSentry,
-} from './errors/sentry-reporter';
+import ErrorReporter from './errors/error-reporter';
 import BarDetection from './bar-detection';
 import Settings, {
   DEBANDING_BLEND_MODE_LCD,
@@ -467,7 +465,7 @@ export default class Ambientlight {
       console.warn(
         'applyChromiumBugVideoJitterWorkaround error. Continuing ambientlight initialization...'
       );
-      SentryReporter.captureException(ex);
+      ErrorReporter.captureException(ex);
       this.enableChromiumBugVideoJitterWorkaround = false; // Prevent retries
     }
   }
@@ -553,7 +551,7 @@ export default class Ambientlight {
         true
       );
     } catch (ex) {
-      SentryReporter.captureException(ex);
+      ErrorReporter.captureException(ex);
     }
   }
 
@@ -804,7 +802,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       }
       return;
     } catch (ex) {
-      SentryReporter.captureException(ex);
+      ErrorReporter.captureException(ex);
     }
   };
 
@@ -1363,7 +1361,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
         report('webgl-projector-failed', ex, 'error');
         this.projector = undefined;
         if (!this.settings.webGLCrashDate) {
-          SentryReporter.captureException(ex);
+          ErrorReporter.captureException(ex);
         } else {
           console.log(ex);
           if (ex?.details) console.log(ex.details);
@@ -1441,7 +1439,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       } catch (ex) {
         projectorsBufferCtx = undefined;
         if (!this.settings.webGLCrashDate) {
-          SentryReporter.captureException(ex);
+          ErrorReporter.captureException(ex);
         } else {
           console.log(ex);
           if (ex?.details) console.log(ex.details);
@@ -1488,7 +1486,6 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       this.settingsMenuBtnParent,
       this.videoPlayerElem
     );
-    parseSettingsToSentry(this.settings);
   }
 
   initVideoOverlay() {
@@ -2133,7 +2130,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
         this.videoElem.after(videoOverlay.elem);
       } else {
         if (!this.videoContainerElemMissingThrown) {
-          SentryReporter.captureException(
+          ErrorReporter.captureException(
             new Error(
               'VideoOverlayEnabled but the .html5-video-container element does not exist'
             )
