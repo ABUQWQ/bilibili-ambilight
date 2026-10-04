@@ -14,12 +14,17 @@ html[data-ambientlight-enabled] body {
   overflow-x: clip !important;
 }
 
-html[data-ambientlight-enabled] #app,
-html[data-ambientlight-enabled] #bilibili-player,
-html[data-ambientlight-enabled] .bpx-player-container {
+html[data-ambientlight-enabled] #app {
   max-width: 100% !important;
   min-width: 0 !important;
 }
+
+/* Do not clamp #bilibili-player or .bpx-player-container.
+   Wide mode sets a 16:9 box from the viewport height (925px tall wants about
+   1644px wide). max-width: 100% pinned that box to the old left column
+   (1108px) while the height stayed, so the picture letterboxed and looked
+   smaller after the danmaku list moved down. overflow-x: clip above already
+   stops the projector from creating a horizontal scrollbar. */
 
 html[data-ambientlight-enabled] .bpx-player-container {
   isolation: isolate;

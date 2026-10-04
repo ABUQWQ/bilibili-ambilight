@@ -22,8 +22,15 @@ probe so the user never has to paste screenshots manually.
 | Probe self-test | `_tools/probe_selftest.py` | Playwright test that proves the probe pipeline works |
 | Selector audit | `_tools/selector_audit.md` | Live-DOM findings for the Bilibili player |
 
-There is **no git repository** in this workspace. Nothing can be reverted.
-Running `git init` here is strongly recommended before further edits.
+Git is initialized on `main`. Do not commit `.env` (Sentry token), `node_modules/`, or `_tools/probe-captures/`.
+
+The user-accepted restore point is tag `known-good-80` (`ab04943`, 2026-10-04). They judged that build at about 80% of the original YouTube extension. To put the loadable extension and its source back to that point without touching the rest of the workspace:
+
+```powershell
+git checkout known-good-80 -- bilibili-ambilight ambilight-bilibili
+```
+
+Then reload the unpacked extension and hard-refresh the video page. See section 7.
 
 ---
 
@@ -360,29 +367,19 @@ with 4/4 screenshots.
 
 ## 5. Current status and open items
 
-Confirmed working:
+Confirmed by the user on 2026-10-04 (`known-good-80`):
 
-- MV3 service worker loads; content script injects on `/video/*`.
-- Ambient light renders around the player, follows video colour.
-- Right rail, toolbar row, video info, description and comment area receive the
-  page wash; horizontal scroll is gone (`scrollWidth == clientWidth`).
-- Settings menu: presets (推荐/柔和/鲜艳/影院/省电), 高级 toggle, close button,
-  right-click reset, collapsed sections.
-- Build pipeline and dist/output sync; all bundles pass `node --check`.
+- The page wash is acceptable and roughly 80% of the original YouTube extension.
+- Player, danmaku, and the control bar still render. Horizontal scroll stays gone.
+- The hard horizon across the comments and the right rail is gone in that build.
 
-Not yet confirmed by the user after the latest build:
+Still open:
 
-- The 165vh radial-mask glow geometry (bottom cut-off). Built and synced, but
-  the last user report predates it.
 - Web-fullscreen / native-fullscreen behaviour since the z-index revert.
-- Whether comment cards inside the shadow DOM still paint opaque backgrounds.
+- Opaque surfaces inside the `bili-comments` shadow tree.
+- The remaining 20% versus upstream was not itemized. Do not restyle from memory.
 
-Suggested next step: ask the user to reload the extension, press
-`Ctrl+Shift+R`, and click the probe button. Then read
-`_tools/probe-captures/report.json` and compare
-`.bili-ambientlight-page-glow.rect.height` against `innerHeight`, and check that
-`.left-container`, `.right-container`, `#mirror-vdcon` all report
-`background-color: rgba(0, 0, 0, 0)`.
+Section 3.3's 165vh radial mask is historical. The accepted build no longer uses it. See section 7.
 
 ---
 
@@ -410,4 +407,30 @@ YouTube behaviour; it is missing `assets` and git metadata now, so to restore a
 full checkout use
 `git clone -b develop https://github.com/WesselKroos/youtube-ambilight.git`
 and expect commit `18d17188e5562e5ee913f005192d30c9a60be078`.
+
+---
+
+## 7. Accepted build (2026-10-04)
+
+Tag `known-good-80`, commit `ab04943`, on top of the initial snapshot `b8b3312`. The user asked for this mark before further edits.
+
+Two bugs were fixed after the initial snapshot. Both are included in the tag.
+
+### The wash was only as tall as the video
+
+`_bilibili-parity.scss` sized both the glow and its clipping container with `--bili-glow-height`. `ambientlight.js` wrote the video height in pixels into that same variable. On a 911px viewport the glow box measured 593px, so everything under the player was the bare page colour.
+
+The page-wash size is now `--bili-page-glow-span` (230vh), shared by the glow and the container. The video height is published as `--bili-video-height` and must not be reused for the wash.
+
+### The comment horizon was a mask contour
+
+A radial mask drew a constant-alpha curve right where the comments start (about y=1047px in the 2026-10-04 capture). Below that curve a flat `html` tint (`rgb(var(--bili-ambient-rgb) / .17)`) was still visible, so the page looked coloured on both sides of a hard line.
+
+The accepted build replaces that mask with a linear fade: solid through 100vh, transparent by 210vh, inside a 230vh box. The blurred canvas is pinned to the player (`top: 100vh; height: 280vh`) so it is not recentred in the tall box, and it extends past the transparent stop so its own edge cannot become the line. The flat page tint is removed (`background-image: none`).
+
+Do not put a radial mask back, and do not paint a second flat tint under the glow.
+
+### Wide mode was letterboxed
+
+`max-width: 100%` on `#bilibili-player` and `.bpx-player-container` clamped the wide-mode 16:9 box to the left column. On a 2133x1012 viewport the player stayed 925px tall (the viewport-based height) but only 1108px wide, so the picture shrank inside black bars while the danmaku list had already moved down. Those two selectors are no longer clamped. `overflow-x: clip` on `html` still prevents the horizontal scrollbar. This fix is after `known-good-80`.
 
