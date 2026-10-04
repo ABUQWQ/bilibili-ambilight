@@ -13,8 +13,8 @@ probe so the user never has to paste screenshots manually.
 
 | Item | Path | Role |
 | --- | --- | --- |
-| Product output | `ambilight-bilibili/` | Load-unpacked target. 17 files, MV3, version 2.38.17 |
-| Product source | `bilibili-ambilight/` | Rollup + Sass source, `node_modules` kept |
+| Product output | `ambilight-bilibili/` | Local load-unpacked folder only. Not committed. |
+| Product source | repository root | Rollup + Sass source. This is what GitHub `main` contains. |
 | YouTube output | `ambilight/` | Earlier YouTube-version build, untouched |
 | Upstream reference | `youtube-ambilight/` | Upstream `develop` @ `18d17188e5562e5ee913f005192d30c9a60be078`; `.git`, `node_modules`, `assets` removed |
 | Dev probe | `_tools/bili-probe/` | Load-unpacked helper extension: scrolls the page, screenshots it, posts results to a local sink |
@@ -42,7 +42,7 @@ It fails in this sandbox with `ERROR: spawn EPERM` because `npm-run-all`
 spawns child processes. Call the binaries directly instead:
 
 ```powershell
-cd C:\Users\hh121\Desktop\aipro\yt32\bilibili-ambilight
+cd C:\Users\hh121\Desktop\aipro\yt32
 
 .\node_modules\.bin\rollup.cmd -c
 .\node_modules\.bin\sass.cmd --no-source-map src/styles/content.scss dist/styles/content.css
@@ -55,14 +55,14 @@ node manifest-copy.js
 ### Publish to the loadable folder
 
 ```powershell
-Copy-Item -Path .\bilibili-ambilight\dist\* -Destination .\ambilight-bilibili\ -Recurse -Force
+Copy-Item -Path .\dist\* -Destination .\ambilight-bilibili\ -Recurse -Force
 ```
 
 Always confirm the two trees are byte-identical afterwards (the user loads
 `ambilight-bilibili`, not `dist`):
 
 ```powershell
-$a = Get-ChildItem .\bilibili-ambilight\dist -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName.Substring((Resolve-Path .\bilibili-ambilight\dist).Path.Length) + ' ' + (Get-FileHash $_.FullName -Algorithm MD5).Hash }
+$a = Get-ChildItem .\dist -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName.Substring((Resolve-Path .\dist).Path.Length) + ' ' + (Get-FileHash $_.FullName -Algorithm MD5).Hash }
 $b = Get-ChildItem .\ambilight-bilibili -Recurse -File | Sort-Object FullName | ForEach-Object { $_.FullName.Substring((Resolve-Path .\ambilight-bilibili).Path.Length) + ' ' + (Get-FileHash $_.FullName -Algorithm MD5).Hash }
 Compare-Object $a $b
 ```

@@ -1,13 +1,17 @@
-# The GitHub repo only tracks the Bilibili extension.
-# Local workspace helpers stay on disk but are not part of the project.
+# Build output and local workspace files stay on disk, not in the repo.
 
-node_modules/
+/node_modules
+/dist
+/releases
+/sourcecodes
+/sourcemaps
 _tools/
 .spec-workflow/
 ambilight/
+ambilight-bilibili/
 youtube-ambilight/
 
-# Secrets. The source tree keeps a Sentry auth token in .env.
+# Secrets.
 .env
 .env.*
 !.env.example
