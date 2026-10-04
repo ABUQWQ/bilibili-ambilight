@@ -1,6 +1,0 @@
-/node_modules
-/dist
-/releases
-/sourcecodes
-/sourcemaps
-.env.local
