@@ -1,5 +1,3 @@
-# Build output and local workspace files stay on disk, not in the repo.
-
 /node_modules
 /dist
 /releases
@@ -10,8 +8,12 @@ _tools/
 ambilight/
 ambilight-bilibili/
 youtube-ambilight/
+HANDOFF.md
+.github/
+.vscode/
+FUNDING.yml
+.npmrc
 
-# Secrets.
 .env
 .env.*
 !.env.example
