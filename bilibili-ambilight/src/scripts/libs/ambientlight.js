@@ -2005,14 +2005,15 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       height: this.videoElem.videoHeight,
     };
 
-    // Publish the video geometry so the Bilibili glow layer can spread a wide
-    // soft halo well beyond the player instead of hugging its border.
+    // Video box only. The page wash size lives in CSS as
+    // --bili-page-glow-span. Do not write the video height into
+    // that variable, or the wash collapses to the player.
     if (this.videoPlayerElem?.classList?.contains('bpx-player-container')) {
       const style = document.documentElement.style;
       style.setProperty('--bili-glow-left', `${Math.round(this.videoOffset.left)}px`);
       style.setProperty('--bili-glow-top', `${Math.round(this.videoOffset.top)}px`);
       style.setProperty('--bili-glow-width', `${Math.round(this.videoOffset.width)}px`);
-      style.setProperty('--bili-glow-height', `${Math.round(this.videoOffset.height)}px`);
+      style.setProperty('--bili-video-height', `${Math.round(this.videoOffset.height)}px`);
       style.setProperty(
         '--bili-glow-center-x',
         `${Math.round(this.videoOffset.left + this.videoOffset.width / 2)}px`

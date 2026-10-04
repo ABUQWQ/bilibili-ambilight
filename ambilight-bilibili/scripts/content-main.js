@@ -8103,7 +8103,7 @@ Video ready state: ${readyStateToString(videoElem === null || videoElem === void
         style.setProperty('--bili-glow-left', `${Math.round(this.videoOffset.left)}px`);
         style.setProperty('--bili-glow-top', `${Math.round(this.videoOffset.top)}px`);
         style.setProperty('--bili-glow-width', `${Math.round(this.videoOffset.width)}px`);
-        style.setProperty('--bili-glow-height', `${Math.round(this.videoOffset.height)}px`);
+        style.setProperty('--bili-video-height', `${Math.round(this.videoOffset.height)}px`);
         style.setProperty('--bili-glow-center-x', `${Math.round(this.videoOffset.left + this.videoOffset.width / 2)}px`);
         style.setProperty('--bili-glow-center-y', `${Math.round(this.videoOffset.top + this.videoOffset.height / 2)}px`);
       }

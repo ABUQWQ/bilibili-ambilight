@@ -48,8 +48,8 @@ html[data-ambientlight-enabled] .bpx-player-video-area > .ambientlight .ambientl
    off" band across the comment list. Both boxes read the same variable so the
    two numbers can never drift apart again. */
 html[data-ambientlight-enabled]:not(:has(.bpx-player-container[data-screen='full'])):not(:has(.bpx-player-container[data-screen='web'])) body > .ambientlight .ambientlight__container {
-  height: var(--bili-glow-height) !important;
-  min-height: var(--bili-glow-height) !important;
+  height: var(--bili-page-glow-span) !important;
+  min-height: var(--bili-page-glow-span) !important;
 }
 
 /* 2. Player chrome.
@@ -82,6 +82,9 @@ html[data-ambientlight-enabled] .bpx-player-video-wrap {
    ambient colour and blur the page behind them, matching the YouTube build. */
 
 html[data-ambientlight-enabled] {
+  /* Page-wash size. Do not reuse --bili-glow-height: that name is the video
+     box in pixels, and using it here collapsed the wash to the player. */
+  --bili-page-glow-span: 230vh;
   --bili-chrome-base: rgba(18, 19, 22, .58);
   --bili-chrome-base-strong: rgba(18, 19, 22, .76);
   --bili-chrome-border: rgba(255, 255, 255, .14);
@@ -135,40 +138,58 @@ html[data-ambientlight-enabled] .bpx-player-sending-bar {
    everything below the fold went flat/cut off. Fix: pin the glow layer to
    the viewport and let the page chrome stay translucent over it. */
 
-/* Anchor the wash to the top of the document, like the YouTube build does, so
-   it scrolls away with the first screen instead of following the viewport down
-   the (very tall) comment list.
+/* Anchor the wash to the top of the document so it scrolls away with the
+   first screen instead of following the viewport down the comment list.
 
-   Sizing note: the previous 100vh box left the mask at ~79% alpha where the
-   element ended, which painted a visible horizontal cut across the comments.
-   The gradient below is chosen so alpha is guaranteed to reach zero well
-   before the element's bottom edge:
-
-     element 165vh, centre at 18%  -> cy = 29.7vh, bottom edge 135.3vh away
-     120% vertical radius          -> 198vh, so the bottom edge sits at 68%
-     gradient reaches 0 at 62%     -> y = 152vh, i.e. past the 97.5vh fold
-
-   Everything inside the first viewport therefore stays fully lit and the wash
-   fades out between roughly one and one and a half screens down. */
+   A radial mask draws a constant-alpha isoline. On this page that isoline
+   landed at the top of the comments and read as a hard horizon across the
+   comment column and the right rail. Below it the flat page tint was still
+   visible, so the wash appeared to continue on the other side of a line.
+   A long linear fade has no contour. It stays solid through the first
+   screen, eases out across the comments, and is fully transparent before
+   the clipped edge of the 230vh box. */
 html[data-ambientlight-enabled] body > .ambientlight .bili-ambientlight-page-glow {
   position: absolute !important;
   inset: 0 auto auto 0 !important;
   width: 100% !important;
-  height: var(--bili-glow-height) !important;
-  -webkit-mask-image: radial-gradient(
-    125% 120% at 50% 18%,
+  height: var(--bili-page-glow-span) !important;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
     #000 0,
-    #000 42%,
-    rgba(0, 0, 0, .55) 54%,
-    transparent 62%
+    #000 100vh,
+    rgba(0, 0, 0, .62) 140vh,
+    rgba(0, 0, 0, .28) 175vh,
+    transparent 210vh
   );
-  mask-image: radial-gradient(
-    125% 120% at 50% 18%,
+  mask-image: linear-gradient(
+    to bottom,
     #000 0,
-    #000 42%,
-    rgba(0, 0, 0, .55) 54%,
-    transparent 62%
+    #000 100vh,
+    rgba(0, 0, 0, .62) 140vh,
+    rgba(0, 0, 0, .28) 175vh,
+    transparent 210vh
   );
+}
+
+/* Keep the blurred frame centred on the player. The glow box is taller than
+   one screen; centring the canvas in that box would slide the colour down
+   into the comments. The bitmap itself is opaque, so it has to extend
+   past the mask's transparent stop or its own edge becomes the line. */
+html[data-ambientlight-enabled] body > .ambientlight .bili-ambientlight-page-glow__canvas {
+  top: 100vh !important;
+  left: 50% !important;
+  width: 180vw !important;
+  height: 280vh !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* The flat tint used to sit under the masked glow. Where the mask ended,
+   the eye stepped from the blurred frame onto that tint, which is the line
+   in the comments. The page base stays the theme colour and the glow is the
+   only wash. */
+html[data-ambientlight-enabled].night-mode:not(:has(.bpx-player-container[data-screen='full'])):not(:has(.bpx-player-container[data-screen='web'])),
+html[data-ambientlight-enabled]:not(.night-mode):not(:has(.bpx-player-container[data-screen='full'])):not(:has(.bpx-player-container[data-screen='web'])) {
+  background-image: none !important;
 }
 
 /* Surfaces that would otherwise block the wash. */
