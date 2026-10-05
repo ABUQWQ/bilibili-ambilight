@@ -1080,8 +1080,11 @@ export default class Settings {
         'bpx-player-container'
       );
     if (isBilibiliPlayer) {
+      this.menuElem.classList.add('bpx-ambientlight-settings-menu');
+      this.menuElem.hidden = true;
       this.modalBackdropElem = document.createElement('div');
       this.modalBackdropElem.className = 'bpx-ambientlight-modal-backdrop';
+      this.modalBackdropElem.hidden = true;
       document.body.appendChild(this.modalBackdropElem);
       on(this.modalBackdropElem, 'click', (event) => this.onCloseMenu(event));
       document.body.appendChild(this.menuElem);
@@ -1797,10 +1800,10 @@ export default class Settings {
 
   menuOnCloseScrollBottom = -1;
   menuOnCloseScrollHeight = 1;
+  menuOpenRequest = 0;
   onSettingsBtnClicked = async () => {
-    const isOpen =
-      this.menuElem.classList.contains('is-visible') ||
-      this.menuElem.classList.contains('fade-out');
+    const isClosing = this.menuElem.classList.contains('fade-out');
+    const isOpen = this.menuElem.classList.contains('is-visible') && !isClosing;
     if (isOpen) {
       this.onCloseMenu({
         target: this.menuBtn,
@@ -1809,10 +1812,26 @@ export default class Settings {
       return;
     }
 
+    if (isClosing) this.closeMenuImmediately();
+    const request = ++this.menuOpenRequest;
     while (!this.ambientlight.initializedTime) {
       await new Promise((resolve) => setTimeout(resolve, 500));
+      if (request !== this.menuOpenRequest) return;
     }
+    if (request !== this.menuOpenRequest) return;
 
+    if (this.modalBackdropElem) {
+      const ambientRgb = getComputedStyle(document.documentElement)
+        .getPropertyValue('--bili-ambient-rgb')
+        .trim();
+      if (ambientRgb) {
+        this.menuElem.style.setProperty('--bili-ambient-rgb', ambientRgb);
+      } else {
+        this.menuElem.style.removeProperty('--bili-ambient-rgb');
+      }
+    }
+    this.menuElem.hidden = false;
+    if (this.modalBackdropElem) this.modalBackdropElem.hidden = false;
     this.menuElem.classList.remove('fade-out');
     this.menuElem.classList.add('is-visible');
     this.modalBackdropElem?.classList.add('is-visible');
@@ -1850,9 +1869,50 @@ export default class Settings {
       on(document, 'keydown', this.modalEscapeHandler, true);
     }
 
-    setTimeout(() => {
+    this.menuWarningTimeout = setTimeout(() => {
+      this.menuWarningTimeout = undefined;
+      if (request !== this.menuOpenRequest) return;
       this.scrollToWarning();
     }, 100);
+  };
+
+  closeMenuImmediately = () => {
+    ++this.menuOpenRequest;
+    if (!this.menuElem) return;
+
+    if (this.menuElem.classList.contains('is-visible')) {
+      this.menuOnCloseScrollBottom = !this.menuElem.scrollTop
+        ? -1
+        : this.menuElem.scrollHeight -
+          this.menuElem.offsetHeight -
+          this.menuElem.scrollTop;
+      this.menuOnCloseScrollHeight = this.menuElem.scrollHeight;
+    }
+    if (this.menuWarningTimeout) {
+      clearTimeout(this.menuWarningTimeout);
+      this.menuWarningTimeout = undefined;
+    }
+    if (this.onSettingsFadeOutEndTimeout) {
+      clearTimeout(this.onSettingsFadeOutEndTimeout);
+      this.onSettingsFadeOutEndTimeout = undefined;
+    }
+    off(this.menuElem, 'animationend', this.onSettingsFadeOutEnd);
+    off(document.body, 'click', this.onCloseMenu);
+
+    if (this.modalEscapeHandler) {
+      off(document, 'keydown', this.modalEscapeHandler, true);
+      this.modalEscapeHandler = undefined;
+    }
+
+    this.menuElem.classList.remove('fade-out', 'is-visible');
+    this.menuElem.hidden = true;
+    this.modalBackdropElem?.classList.remove('is-visible');
+    if (this.modalBackdropElem) this.modalBackdropElem.hidden = true;
+    this.menuBtn?.setAttribute('aria-expanded', false);
+    this.ambientlight.videoPlayerElem?.classList.remove(
+      'ytp-ambientlight-settings-shown'
+    );
+    this.hideUpdatesBadge();
   };
 
   onCloseMenu = (e) => {
@@ -1864,6 +1924,14 @@ export default class Settings {
     if (this.menuElem === e.target || this.menuElem.contains(e.target)) return;
 
     e.stopPropagation();
+    ++this.menuOpenRequest;
+    if (this.menuWarningTimeout) {
+      clearTimeout(this.menuWarningTimeout);
+      this.menuWarningTimeout = undefined;
+    }
+    if (this.onSettingsFadeOutEndTimeout) {
+      clearTimeout(this.onSettingsFadeOutEndTimeout);
+    }
 
     this.menuOnCloseScrollBottom = !this.menuElem.scrollTop
       ? -1
@@ -1899,15 +1967,9 @@ export default class Settings {
     this.hideUpdatesBadge();
   };
 
-  onSettingsFadeOutEnd = () => {
-    off(this.menuElem, 'animationend', this.onSettingsFadeOutEnd);
-    if (this.onSettingsFadeOutEndTimeout) {
-      clearTimeout(this.onSettingsFadeOutEndTimeout);
-      this.onSettingsFadeOutEndTimeout = undefined;
-    }
-
-    this.menuElem.classList.remove('fade-out', 'is-visible');
-    this.modalBackdropElem?.classList.remove('is-visible');
+  onSettingsFadeOutEnd = (event) => {
+    if (event && event.target !== this.menuElem) return;
+    this.closeMenuImmediately();
   };
 
   onLoaded = () => {

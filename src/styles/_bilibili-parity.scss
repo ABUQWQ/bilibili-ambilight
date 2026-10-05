@@ -62,6 +62,8 @@ html[data-ambientlight-enabled]:not(:has(.bpx-player-container[data-screen='full
    page glow that reads as a hard black frame. Remove the frame but keep the
    video surface itself black so letterboxed video still looks correct. */
 
+html[data-ambientlight-enabled] #playerWrap,
+html[data-ambientlight-enabled] #bilibili-player,
 html[data-ambientlight-enabled] .bpx-docker,
 html[data-ambientlight-enabled] .bpx-docker-major,
 html[data-ambientlight-enabled] .bpx-player-container {
@@ -74,6 +76,17 @@ html[data-ambientlight-enabled] .bpx-docker::before,
 html[data-ambientlight-enabled] .bpx-docker-major::before {
   background: transparent !important;
   opacity: 0 !important;
+}
+
+/* The loading skeleton remains under the live player at the old column width. */
+html[data-ambientlight-enabled] #playerWrap:has(#bilibili-player video) {
+  #bilibili-player-placeholder,
+  #bilibili-player-placeholder-bottom,
+  #bilibili-player-placeholder-bottom-left,
+  #bilibili-player-placeholder-bottom-right {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
 }
 
 html[data-ambientlight-enabled] .bpx-player-video-area,
@@ -128,11 +141,21 @@ html[data-ambientlight-enabled] .bpx-player-video-inputbar:focus-within {
   box-shadow: var(--bili-chrome-shadow) !important;
 }
 
-/* A vertical gradient inside a 56px bar shows its mid colour along the bar's
-   left and right ends, which reads as another sharp rectangle. A flat tint
-   keeps the row readable without introducing an edge. */
-html[data-ambientlight-enabled] .bpx-player-sending-bar {
-  background: rgb(var(--bili-ambient-rgb) / .16) !important;
+/* Only the individual controls need a surface. A tint on the whole row
+   leaves a visible rectangle when the player expands beyond its old column. */
+html[data-ambientlight-enabled] .bpx-player-primary-area,
+html[data-ambientlight-enabled] .bpx-player-sending-area,
+html[data-ambientlight-enabled] .bpx-player-sending-bar,
+html[data-ambientlight-enabled] #playerWrap::before,
+html[data-ambientlight-enabled] #playerWrap::after,
+html[data-ambientlight-enabled] #bilibili-player::before,
+html[data-ambientlight-enabled] #bilibili-player::after,
+html[data-ambientlight-enabled] .bpx-player-sending-area::before,
+html[data-ambientlight-enabled] .bpx-player-sending-area::after,
+html[data-ambientlight-enabled] .bpx-player-sending-bar::before,
+html[data-ambientlight-enabled] .bpx-player-sending-bar::after {
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 /* 4. Whole-page ambient wash (YouTube parity).

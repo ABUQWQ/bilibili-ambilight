@@ -1004,7 +1004,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
 
     videoPlayerObserver.observe(this.videoPlayerElem, {
       attributes: true,
-      attributeFilter: ['class'],
+      attributeFilter: ['class', 'data-screen'],
     });
     if (this.thumbnailOverlayElem) {
       videoPlayerObserver.observe(this.thumbnailOverlayElem, {
@@ -1169,7 +1169,15 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     }
     if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
 
-    await this.onKeyPressed(e.key?.toUpperCase());
+    const key = e.key?.toUpperCase();
+    const keys = this.settings.getKeys();
+    if (key === keys.enabled) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.repeat) return;
+    }
+
+    await this.onKeyPressed(key);
   };
 
   handleVideoFocus = () => {
@@ -1749,12 +1757,26 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     }
 
     const view = this.getView();
-    if (this.view === view) return false;
+    const fullscreenElem = document.fullscreenElement;
+    const fullscreenElemChanged = fullscreenElem !== this.fullscreenElem;
+    const playerScreenChanged = this.playerScreen !== this.viewPlayerScreen;
+    const contentElem =
+      view === VIEW_FULLSCREEN
+        ? this.getFullscreenContentElem()
+        : this.getContentElem();
+    const parentChanged = this.elem.parentElement !== contentElem;
+    if (
+      this.view === view &&
+      !fullscreenElemChanged &&
+      !playerScreenChanged &&
+      !parentChanged
+    )
+      return false;
 
     this.view = view;
-
-    // let videoPlayerSizeUpdated = false;
-    if (!skipUpdateImmersiveMode) await this.updateImmersiveMode();
+    this.viewPlayerScreen = this.playerScreen;
+    this.fullscreenElem = fullscreenElem;
+    this.sizesChanged = true;
 
     const isFullscreen = view == VIEW_FULLSCREEN;
     const fullscreenChanged = isFullscreen !== this.isFullscreen;
@@ -1768,10 +1790,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       this.videoPlayerResizeToFullscreen = this.isFullscreen;
     }
 
-    const fullscreenElemChanged =
-      document.fullscreenElement !== this.fullscreenElem;
-    this.fullscreenElem = document.fullscreenElement;
-    if (fullscreenChanged || fullscreenElemChanged) {
+    if (fullscreenChanged || fullscreenElemChanged || parentChanged) {
       if (this.isFullscreen) {
         this.appendElemToFullscreenElem();
       } else {
@@ -1788,6 +1807,9 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     // if (videoPlayerSizeUpdated) {
     //   console.log('videoPlayerSizeUpdated');
     if (!skipUpdateImmersiveMode) {
+      await this.updateImmersiveMode();
+      // Fullscreen can change while an asynchronous view update is pending.
+      await this.updateView(true);
       raf(() => this.updateVideoPlayerSize()); // Always force youtube to recalculate the size because it caches the size per view without invalidation based on ambient light enabled/disabled
     }
     // }
@@ -3885,6 +3907,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
 
   async disable() {
     if (this.pendingStart) return;
+    this.settings.closeMenuImmediately();
     this.settings.set('enabled', false, true);
 
     this.updateKeywordsToPreventTheaterScaling();

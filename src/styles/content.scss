@@ -3595,13 +3595,11 @@ html[data-ambientlight-enabled] body > .ambientlight .bili-ambientlight-page-glo
 
 /* Keep the ambient layer mounted during Bilibili web/fullscreen transitions.
    Hiding it here leaves a stale black player surface until the next frame. */
-html[data-ambientlight-enabled]:has(.bpx-player-container[data-screen='full']) body > .ambientlight,
-html[data-ambientlight-enabled]:has(.bpx-player-container[data-screen='web']) body > .ambientlight {
+html[data-ambientlight-enabled]:has(:fullscreen, .bpx-player-container[data-screen='full'], .bpx-player-container[data-screen='web']) body > .ambientlight {
   display: contents !important;
 }
 
-html[data-ambientlight-enabled]:has(.bpx-player-container[data-screen='full']) body > .ambientlight .ambientlight__container,
-html[data-ambientlight-enabled]:has(.bpx-player-container[data-screen='web']) body > .ambientlight .ambientlight__container {
+html[data-ambientlight-enabled]:has(:fullscreen, .bpx-player-container[data-screen='full'], .bpx-player-container[data-screen='web']) body > .ambientlight .ambientlight__container {
   position: fixed;
   inset: 0;
   width: 100vw;
@@ -3632,7 +3630,7 @@ html[data-ambientlight-enabled] .bpx-player-video-area > .ambientlight {
 }
 
 html[data-ambientlight-enabled] .bpx-player-video-area > .ambientlight .ambientlight__container {
-  z-index: 0;
+  z-index: -1;
   min-height: 100%;
 }
 
@@ -3641,12 +3639,25 @@ html[data-ambientlight-enabled] .bpx-player-container > .ambientlight {
 }
 
 html[data-ambientlight-enabled] .bpx-player-container > .ambientlight .ambientlight__container {
-  z-index: 1;
+  z-index: -1;
   height: 100% !important;
   min-height: 100%;
   overflow: visible !important;
   contain: none !important;
   pointer-events: none;
+}
+
+/* The document wash must never become a fullscreen video overlay. */
+html[data-ambientlight-enabled]:has(:fullscreen, .bpx-player-container[data-screen='full'], .bpx-player-container[data-screen='web']) .ambientlight {
+  display: contents;
+
+  .ambientlight__container {
+    z-index: -1;
+  }
+
+  .bili-ambientlight-page-glow {
+    display: none !important;
+  }
 }
 
 html[data-ambientlight-enabled] .bpx-player-container > .ambientlight .ambientlight__filter,
@@ -3867,6 +3878,17 @@ html[data-ambientlight-enabled] .danmaku-wrap {
   transition: opacity .2s ease;
 }
 
+.bpx-ambientlight-modal-backdrop[hidden],
+body > .bpx-ambientlight-settings-menu[hidden] {
+  display: none !important;
+}
+
+body > .bpx-ambientlight-settings-menu {
+  --bili-ambient-rgb: 96 166 192;
+  --bili-ambient-panel-line: rgb(var(--bili-ambient-rgb) / .3);
+  animation: none !important;
+}
+
 body > .ytpa-ambientlight-settings-menu {
   position: fixed !important;
   top: 50% !important;
@@ -3893,7 +3915,7 @@ body > .ytpa-ambientlight-settings-menu.fade-out {
   visibility: visible;
 }
 
-html[data-ambientlight-enabled] body > .ytpa-ambientlight-settings-menu {
+html:has(body > .bpx-ambientlight-settings-menu) body > .ytpa-ambientlight-settings-menu {
   box-sizing: border-box;
   width: min(460px, calc(100vw - 32px)) !important;
   height: auto;
@@ -3905,6 +3927,7 @@ html[data-ambientlight-enabled] body > .ytpa-ambientlight-settings-menu {
   border-radius: 10px;
   border: 1px solid var(--bili-ambient-panel-line);
   background: rgba(21, 21, 21, .96);
+  color: #e7e9eb;
   box-shadow: 0 18px 48px rgba(0, 0, 0, .52), inset 0 1px 0 rgba(255, 255, 255, .06);
   backdrop-filter: blur(18px) saturate(145%);
   -webkit-backdrop-filter: blur(18px) saturate(145%);
@@ -3912,23 +3935,23 @@ html[data-ambientlight-enabled] body > .ytpa-ambientlight-settings-menu {
   scrollbar-color: rgb(var(--bili-ambient-rgb) / .48) transparent;
 }
 
-html[data-ambientlight-enabled] body > .ytpa-ambientlight-settings-menu::-webkit-scrollbar {
+html:has(body > .bpx-ambientlight-settings-menu) body > .ytpa-ambientlight-settings-menu::-webkit-scrollbar {
   width: 8px;
 }
 
-html[data-ambientlight-enabled] body > .ytpa-ambientlight-settings-menu::-webkit-scrollbar-thumb {
+html:has(body > .bpx-ambientlight-settings-menu) body > .ytpa-ambientlight-settings-menu::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
   background: rgb(var(--bili-ambient-rgb) / .48);
   background-clip: padding-box;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-panel,
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-panel-menu {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-panel,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-panel-menu {
   width: 100% !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-menuitem--header {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-menuitem--header {
   position: sticky;
   top: 0;
   z-index: 8;
@@ -3946,7 +3969,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-menuitem-
   cursor: default;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-menuitem--header + .ytpa-menuitem--header {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-menuitem--header + .ytpa-menuitem--header {
   position: sticky;
   top: 41px;
   min-height: 0;
@@ -3955,7 +3978,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-menuitem-
   background: rgba(23, 24, 26, .9) !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-menuitem--header .ytp-menuitem-label {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-menuitem--header .ytp-menuitem-label {
   display: flex;
   align-items: center;
   width: auto;
@@ -3963,19 +3986,19 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-menuitem-
   padding: 0;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-menuitem--header .ytp-menuitem-content {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-menuitem--header .ytp-menuitem-content {
   flex: 0 0 auto;
   padding: 0;
 }
 
-html[data-ambientlight-enabled] .ytpa-feedback-link__text {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-feedback-link__text {
   color: inherit;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0;
 }
 
-html[data-ambientlight-enabled] .ytpa-settings-version {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-settings-version {
   margin-left: 8px;
   padding: 1px 6px;
   border-radius: 999px;
@@ -3985,19 +4008,19 @@ html[data-ambientlight-enabled] .ytpa-settings-version {
   font-weight: 400;
 }
 
-html[data-ambientlight-enabled] .ytpa-settings-subtitle {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-settings-subtitle {
   color: rgba(255, 255, 255, .68) !important;
   font-size: 12px !important;
   font-weight: 500 !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-settings-toolbar {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-settings-toolbar {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-html[data-ambientlight-enabled] .ytpa-settings-toolbar button {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-settings-toolbar button {
   position: relative;
   display: grid !important;
   place-items: center;
@@ -4013,15 +4036,15 @@ html[data-ambientlight-enabled] .ytpa-settings-toolbar button {
   transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
 }
 
-html[data-ambientlight-enabled] .ytpa-settings-toolbar button:hover,
-html[data-ambientlight-enabled] .ytpa-settings-toolbar button:focus-visible {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-settings-toolbar button:hover,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-settings-toolbar button:focus-visible {
   border-color: rgb(var(--bili-ambient-rgb) / .42) !important;
   background: rgb(var(--bili-ambient-rgb) / .16) !important;
   color: #fff;
   transform: translateY(-1px);
 }
 
-html[data-ambientlight-enabled] body > .ytpa-ambientlight-settings-menu .ytpa-settings-toolbar svg {
+html:has(body > .bpx-ambientlight-settings-menu) body > .ytpa-ambientlight-settings-menu .ytpa-settings-toolbar svg {
   display: block;
   width: 16px;
   height: 16px;
@@ -4029,38 +4052,38 @@ html[data-ambientlight-enabled] body > .ytpa-ambientlight-settings-menu .ytpa-se
   pointer-events: none;
 }
 
-html[data-ambientlight-enabled] body > .ytpa-ambientlight-settings-menu .ytpa-export-import-settings-btn__tooltip {
+html:has(body > .bpx-ambientlight-settings-menu) body > .ytpa-ambientlight-settings-menu .ytpa-export-import-settings-btn__tooltip {
   display: none;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-toolbar button {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-toolbar button {
   border-color: rgba(0, 0, 0, .12) !important;
   background: rgba(0, 0, 0, .05) !important;
   color: rgba(24, 25, 28, .7);
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-toolbar button:hover,
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-toolbar button:focus-visible {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-toolbar button:hover,
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-toolbar button:focus-visible {
   color: #18191c;
 }
 
 /* 设置面板：关闭按钮 */
 
-html[data-ambientlight-enabled] .ytpa-close-settings-btn:hover,
-html[data-ambientlight-enabled] .ytpa-close-settings-btn:focus-visible {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-close-settings-btn:hover,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-close-settings-btn:focus-visible {
   border-color: rgba(255, 96, 96, .5) !important;
   background: rgba(255, 96, 96, .18) !important;
   color: #fff !important;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-close-settings-btn:hover,
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-close-settings-btn:focus-visible {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-close-settings-btn:hover,
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-close-settings-btn:focus-visible {
   color: #b3131f !important;
 }
 
 /* 设置面板：右键重置提示 */
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-rightclick-hint {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-rightclick-hint {
   overflow: hidden;
   min-width: 0;
   color: rgba(255, 255, 255, .5);
@@ -4070,13 +4093,13 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-rightclic
   text-overflow: ellipsis;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-rightclick-hint {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-rightclick-hint {
   color: rgba(24, 25, 28, .5);
 }
 
 /* 设置面板：快速预设 */
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-presets {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-presets {
   display: block;
   margin: 8px 10px 2px;
   padding: 8px 10px 10px;
@@ -4085,7 +4108,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-presets {
   background: rgb(var(--bili-ambient-rgb) / .06);
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-presets__label {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-presets__label {
   margin-bottom: 7px;
   color: rgba(255, 255, 255, .55);
   font-size: 11px;
@@ -4093,17 +4116,17 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-presets__
   letter-spacing: 0;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-presets__label {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-presets__label {
   color: rgba(24, 25, 28, .55);
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-presets__buttons {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-presets__buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-preset-btn {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-preset-btn {
   flex: 1 1 auto;
   box-sizing: border-box;
   min-width: 62px;
@@ -4123,30 +4146,30 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-preset-bt
   transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-preset-btn:hover,
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-preset-btn:focus-visible {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-preset-btn:hover,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-preset-btn:focus-visible {
   border-color: rgb(var(--bili-ambient-rgb) / .5);
   background: rgb(var(--bili-ambient-rgb) / .18);
   color: #fff;
   outline: none;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-preset-btn.is-active {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-preset-btn.is-active {
   border-color: rgb(var(--bili-ambient-rgb) / .8);
   background: rgb(var(--bili-ambient-rgb) / .3);
   color: #fff;
   font-weight: 600;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-preset-btn {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-preset-btn {
   border-color: rgba(0, 0, 0, .12);
   background: rgba(0, 0, 0, .04);
   color: rgba(24, 25, 28, .8);
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-preset-btn:hover,
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-preset-btn:focus-visible,
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-preset-btn.is-active {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-preset-btn:hover,
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-preset-btn:focus-visible,
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-preset-btn.is-active {
   color: #18191c;
 }
 
@@ -4158,21 +4181,21 @@ html[data-ambientlight-layout-performance-improvements] .video-page-special-card
   contain-intrinsic-size: auto 90px;
 }
 
-html[data-ambientlight-enabled] .ytpa-reset-settings-btn::before,
-html[data-ambientlight-enabled] .ytpa-reset-settings-btn::after {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-reset-settings-btn::before,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-reset-settings-btn::after {
   content: none !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-reset-settings-btn {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-reset-settings-btn {
   border-radius: 8px !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-reset-settings-btn:hover,
-html[data-ambientlight-enabled] .ytpa-reset-settings-btn:focus-visible {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-reset-settings-btn:hover,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-reset-settings-btn:focus-visible {
   transform: rotate(-180deg) !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-section {
   position: relative;
   margin: 5px 10px 0;
   border: 1px solid rgb(var(--bili-ambient-rgb) / .12);
@@ -4183,8 +4206,8 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section {
   font-weight: 600;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section__label,
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section__fill {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-section__label,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-section__fill {
   height: 32px;
   padding: 0 13px;
   border: 0;
@@ -4192,7 +4215,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section__
   line-height: 32px;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section::after {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-section::after {
   right: 13px;
   top: 50%;
   width: 7px;
@@ -4205,7 +4228,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section::
   opacity: .6;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section.is-collapsed::after {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-section.is-collapsed::after {
   right: 13px;
   top: 50%;
   margin: -3px 0 0;
@@ -4215,12 +4238,12 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section.i
   transform: rotate(-45deg);
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-section-content {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-section-content {
   padding: 1px 10px 4px;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem,
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-range-wrapper {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-range-wrapper {
   box-sizing: border-box;
   margin: 2px 0;
   padding: 7px 8px;
@@ -4228,11 +4251,11 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-r
   transition: background-color .14s ease;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem {
   min-height: 40px;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-range-wrapper {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-range-wrapper {
   min-height: 0;
   margin: 0;
   padding: 0;
@@ -4240,12 +4263,12 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-r
   background: none !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem:hover,
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-range-wrapper:hover {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem:hover,
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-range-wrapper:hover {
   background: rgb(var(--bili-ambient-rgb) / .1) !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-label {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-label {
   width: calc(100% - 62px);
   padding: 0 8px;
   color: rgba(255, 255, 255, .9);
@@ -4253,14 +4276,14 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-l
   line-height: 18px;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytpa-menuitem-description {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytpa-menuitem-description {
   margin-top: 2px;
   color: rgba(255, 255, 255, .5);
   font-size: 11px;
   line-height: 15px;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-value {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-value {
   min-width: 46px;
   padding: 2px 6px;
   border-radius: 5px;
@@ -4271,7 +4294,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-v
   text-align: right;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-toggle-checkbox {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-toggle-checkbox {
   position: relative;
   width: 36px !important;
   height: 20px !important;
@@ -4281,7 +4304,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-t
   transition: background-color .18s ease;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-toggle-checkbox::after {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-toggle-checkbox::after {
   content: '';
   position: absolute;
   top: 3px;
@@ -4294,25 +4317,25 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-t
   transition: transform .18s ease;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem[aria-checked='true'] .ytp-menuitem-toggle-checkbox {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem[aria-checked='true'] .ytp-menuitem-toggle-checkbox {
   background: rgb(var(--bili-ambient-rgb)) !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem[aria-checked='true'] .ytp-menuitem-toggle-checkbox::after {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem[aria-checked='true'] .ytp-menuitem-toggle-checkbox::after {
   transform: translateX(16px);
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-range-wrapper {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-range-wrapper {
   display: block;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-range {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-range {
   height: 22px;
   margin: 2px 8px 0;
   padding: 0;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-range input[type='range'] {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-range input[type='range'] {
   -webkit-appearance: none !important;
   appearance: none !important;
   display: block !important;
@@ -4328,7 +4351,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-r
   accent-color: rgb(var(--bili-ambient-rgb)) !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-range input[type='range']::-webkit-slider-runnable-track {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-range input[type='range']::-webkit-slider-runnable-track {
   -webkit-appearance: none !important;
   appearance: none !important;
   height: 4px !important;
@@ -4337,7 +4360,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-r
   box-shadow: none !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-range input[type='range']::-webkit-slider-thumb {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .ytp-menuitem-range input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none !important;
   appearance: none !important;
   width: 14px !important;
@@ -4349,7 +4372,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .ytp-menuitem-r
   box-shadow: 0 0 0 2px rgba(255, 255, 255, .22), 0 2px 6px rgba(0, 0, 0, .32) !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .setting-range-datalist {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .setting-range-datalist {
   position: static;
   display: flex;
   justify-content: space-between;
@@ -4361,7 +4384,7 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .setting-range-
   pointer-events: none;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .setting-range-datalist__label {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .setting-range-datalist__label {
   position: static;
   width: auto;
   height: auto;
@@ -4374,74 +4397,74 @@ html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .setting-range-
   pointer-events: all;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .setting-range-datalist__label::before {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .setting-range-datalist__label::before {
   content: none !important;
 }
 
-html[data-ambientlight-enabled] .ytpa-ambientlight-settings-menu .setting-range-datalist__label:hover {
+html:has(body > .bpx-ambientlight-settings-menu) .ytpa-ambientlight-settings-menu .setting-range-datalist__label:hover {
   color: rgb(var(--bili-ambient-rgb));
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .setting-range-datalist__label {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .setting-range-datalist__label {
   color: rgba(24, 25, 28, .5);
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytp-menuitem-range input[type='range']::-webkit-slider-runnable-track {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytp-menuitem-range input[type='range']::-webkit-slider-runnable-track {
   background: rgba(0, 0, 0, .16) !important;
 }
 
-html[data-ambientlight-enabled].night-mode .ytpa-ambientlight-settings-menu,
-html[data-ambientlight-enabled].night-mode .ytpa-ambientlight-settings-menu .ytpa-menuitem--header {
+html:has(body > .bpx-ambientlight-settings-menu).night-mode .ytpa-ambientlight-settings-menu,
+html:has(body > .bpx-ambientlight-settings-menu).night-mode .ytpa-ambientlight-settings-menu .ytpa-menuitem--header {
   background: rgba(23, 24, 26, .97) !important;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu {
   border-color: rgba(0, 0, 0, .12);
   background: rgba(255, 255, 255, .97);
   color: #18191c;
   box-shadow: 0 18px 48px rgba(0, 0, 0, .2), inset 0 1px 0 rgba(255, 255, 255, .8);
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-menuitem--header,
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-section,
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytp-menuitem-label {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-menuitem--header,
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-section,
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytp-menuitem-label {
   color: #18191c;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-menuitem--header {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-menuitem--header {
   background: rgba(255, 255, 255, .96) !important;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-menuitem-description {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytpa-menuitem-description {
   color: rgba(24, 25, 28, .55);
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) .ytpa-ambientlight-settings-menu .ytp-menuitem-value {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) .ytpa-ambientlight-settings-menu .ytp-menuitem-value {
   background: rgba(0, 0, 0, .055);
   color: rgba(24, 25, 28, .78);
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-feedback-link,
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-feedback-link__text,
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-subtitle {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-feedback-link,
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-feedback-link__text,
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-subtitle {
   color: #18191c !important;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-version {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytpa-settings-version {
   background: rgb(var(--bili-ambient-rgb) / .18);
   color: rgba(24, 25, 28, .62);
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytp-menuitem-toggle-checkbox {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytp-menuitem-toggle-checkbox {
   background: rgba(0, 0, 0, .18) !important;
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytp-menuitem-toggle-checkbox::after {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytp-menuitem-toggle-checkbox::after {
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
 }
 
-html[data-ambientlight-enabled]:not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytp-menuitem[aria-checked='true'] .ytp-menuitem-toggle-checkbox {
+html:has(body > .bpx-ambientlight-settings-menu):not(.night-mode) body > .ytpa-ambientlight-settings-menu .ytp-menuitem[aria-checked='true'] .ytp-menuitem-toggle-checkbox {
   background: rgb(var(--bili-ambient-rgb)) !important;
 }
 

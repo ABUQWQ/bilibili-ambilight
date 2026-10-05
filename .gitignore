@@ -22,3 +22,5 @@ FUNDING.yml
 .env.*
 !.env.example
 .npm-cache/
+_pwprofile_probe/
+_probe_downloads/
