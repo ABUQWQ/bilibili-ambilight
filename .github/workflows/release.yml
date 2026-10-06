@@ -110,10 +110,17 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
-          test -s "build/bilibili-ambientlight-${VERSION}.crx"
-          test -s "build/bilibili-ambientlight-${VERSION}.zip"
+          crx="build/bilibili-ambientlight-${VERSION}.crx"
+          zip="build/bilibili-ambientlight-${VERSION}.zip"
+          test -s "$crx"
+          test -s "$zip"
           test -s build/update.xml
-          grep -F "version=\"${VERSION}\"" build/update.xml
+          echo "Generated release files:"
+          ls -l "$crx" "$zip" build/update.xml
+          echo "Generated update.xml:"
+          cat build/update.xml
+          # The builder may emit either single- or double-quoted XML attributes.
+          grep -Eq "version=['\"]${VERSION}['\"]" build/update.xml
           grep -F "bilibili-ambientlight-${VERSION}.crx" build/update.xml
 
       - name: Publish GitHub Release
