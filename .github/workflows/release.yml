@@ -1,0 +1,130 @@
+name: Build and release CRX
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "发布版本号，必须与 package.json 一致，例如 2.38.18"
+        required: true
+        type: string
+      prerelease:
+        description: "标记为预发布版本"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      NODE_VERSION: 22.5.1
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Read and validate version
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          TAG_NAME: ${{ github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          package_version="$(node -p "require('./package.json').version")"
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            requested_version="$INPUT_VERSION"
+          else
+            requested_version="${TAG_NAME#v}"
+          fi
+          if [[ "$requested_version" != "$package_version" ]]; then
+            echo "Version mismatch: package.json=$package_version requested=$requested_version" >&2
+            exit 1
+          fi
+          if [[ ! "$package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "package.json version is not a valid extension version: $package_version" >&2
+            exit 1
+          fi
+          echo "version=$package_version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$package_version" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production extension
+        run: npm run build
+
+      - name: Verify production build
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const manifest = JSON.parse(fs.readFileSync('dist/manifest.json', 'utf8'));
+          const diagnostics = (manifest.content_scripts || []).some((entry) =>
+            (entry.js || []).some((file) => file.includes('diagnostics-page.js'))
+          );
+          if (pkg.version !== process.env.VERSION) throw new Error('package version mismatch');
+          if (manifest.version !== pkg.version) throw new Error('manifest version mismatch');
+          if (diagnostics) throw new Error('diagnostics bridge leaked into production build');
+          NODE
+          test -f dist/manifest.json
+          test ! -f dist/scripts/diagnostics-page.js
+
+      - name: Pack extension directory
+        id: pack
+        uses: cardinalby/webext-buildtools-pack-extension-dir-action@v1
+        with:
+          extensionDir: dist
+          zipFilePath: build/bilibili-ambientlight-${{ steps.version.outputs.version }}.zip
+
+      - name: Build signed CRX3
+        id: crx
+        uses: cardinalby/webext-buildtools-chrome-crx-action@v2
+        with:
+          zipFilePath: ${{ steps.pack.outputs.zipFilePath }}
+          crxFilePath: build/bilibili-ambientlight-${{ steps.version.outputs.version }}.crx
+          privateKey: ${{ secrets.CHROME_CRX_PRIVATE_KEY }}
+          updateXmlPath: build/update.xml
+          updateXmlCodebaseUrl: https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/bilibili-ambientlight-${{ steps.version.outputs.version }}.crx
+
+      - name: Verify CRX and update manifest
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          test -s "build/bilibili-ambientlight-${VERSION}.crx"
+          test -s "build/bilibili-ambientlight-${VERSION}.zip"
+          test -s build/update.xml
+          grep -F "version=\"${VERSION}\"" build/update.xml
+          grep -F "bilibili-ambientlight-${VERSION}.crx" build/update.xml
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Bilibili 氛围灯 v${{ steps.version.outputs.version }}
+          body_path: UPDATE.md
+          prerelease: ${{ inputs.prerelease || false }}
+          files: |
+            build/bilibili-ambientlight-${{ steps.version.outputs.version }}.crx
+            build/bilibili-ambientlight-${{ steps.version.outputs.version }}.zip
+            build/update.xml
+            UPDATE.md

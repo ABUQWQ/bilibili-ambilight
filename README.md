@@ -53,6 +53,20 @@ npm run build
 
 构建结果位于 `dist/`，仅用于本地加载，不提交到 Git。生产构建不会包含页面诊断桥；调试构建由 `BILIBILI_AMBIENTLIGHT_DIAGNOSTICS=1` 控制。
 
+## 发布 CRX
+
+发布工作流位于 `.github/workflows/release.yml`。提交版本标签（例如
+`v2.38.18`）后，GitHub Actions 会校验 `package.json` 版本、构建生产扩展，
+生成带版本号的 `.crx`、`.zip` 和 `update.xml`，并创建 GitHub Release。
+
+发布前请更新根目录的 `UPDATE.md`，它会作为 Release 的更新说明显示并一并附加。
+仓库管理员还需要配置 Actions Secret `CHROME_CRX_PRIVATE_KEY`。工作流会根据
+私钥自动生成更新清单所需的扩展 ID，不需要额外配置 Repository Variable。
+
+手动运行工作流时，填写的版本号必须与 `package.json` 一致。Chrome/Edge
+通常不能直接双击安装第三方 CRX；开发测试请使用“加载已解压的扩展程序”，
+企业或受管环境再使用 CRX 更新清单。
+
 项目的主要入口位于：
 
 - `src/scripts/content.js`：等待 Bilibili 页面资源并加载扩展。
