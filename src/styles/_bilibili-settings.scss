@@ -1,0 +1,326 @@
+/* Standalone modal surface; renderer and SettingsConfig retain their contracts. */
+.bpx-ambientlight-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482000;
+  background: rgb(0 0 0 / .38);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .15s ease, visibility .15s ease;
+  &.is-visible { opacity: 1; visibility: visible; }
+  &[hidden] { display: none !important; }
+}
+
+#ytp-id-190.bpx-ambientlight-settings-menu {
+  --panel: #fff;
+  --text: #18191c;
+  --muted: #61666d;
+  --line: #e3e5e7;
+  --hover: #f6f7f8;
+  --accent: #fb7299;
+  --track: #c9ccd0;
+  --bili-ambient-rgb: 251 114 153;
+  box-sizing: border-box;
+  position: fixed !important;
+  inset: 50% auto auto 50% !important;
+  z-index: 2147482100 !important;
+  display: flex;
+  flex-direction: column;
+  width: min(480px, calc(100vw - 32px)) !important;
+  height: auto !important;
+  max-height: min(760px, calc(100dvh - 32px)) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  box-shadow: 0 20px 64px rgb(0 0 0 / .25) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif !important;
+  letter-spacing: 0;
+  text-shadow: none !important;
+  animation: none !important;
+  transform: translate(-50%, -50%) !important;
+  transition: opacity .15s ease, visibility .15s ease;
+  opacity: 0;
+  visibility: hidden;
+  &.is-visible { opacity: 1; visibility: visible; }
+  &.fade-out { opacity: 0; visibility: hidden; }
+
+  &[hidden] { display: none !important; }
+  &, & * { box-sizing: border-box; }
+  * { font-family: inherit !important; letter-spacing: 0 !important; text-shadow: none !important; }
+  .bili-settings-header { flex: 0 0 auto; border-bottom: 1px solid var(--line); }
+  .ytp-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100% !important;
+    height: auto !important;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--track) transparent;
+  }
+  .ytp-panel-menu { width: 100% !important; padding: 8px 16px 16px; }
+  .ytp-menuitem {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    height: auto;
+    margin: 0;
+    padding: 10px 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent !important;
+    color: var(--text) !important;
+    white-space: normal;
+    font-size: 13px;
+    line-height: 20px;
+    &:hover { background: var(--hover) !important; }
+    &[aria-disabled='true'] { opacity: .5; cursor: not-allowed; }
+  }
+  .ytp-menuitem-label {
+    flex: 1;
+    width: auto !important;
+    min-width: 0;
+    padding: 0 !important;
+    color: var(--text) !important;
+    font-size: 13px;
+    line-height: 20px;
+    overflow-wrap: anywhere;
+  }
+  .ytp-menuitem-content {
+    flex: 0 0 auto;
+    display: flex !important;
+    align-items: center;
+    width: auto !important;
+    margin-left: 12px;
+    padding: 0 !important;
+  }
+  .ytpa-menuitem--header {
+    position: static !important;
+    display: flex;
+    min-height: 0 !important;
+    margin: 0;
+    padding: 14px 16px !important;
+    border: 0;
+    border-radius: 0;
+    background: var(--panel) !important;
+    cursor: default;
+    &:hover { background: var(--panel) !important; }
+    + .ytpa-menuitem--header { padding: 0 16px 12px !important; }
+    .ytp-menuitem-label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  }
+  .ytpa-feedback-link, .ytpa-feedback-link__text {
+    padding: 0;
+    color: var(--text) !important;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .ytpa-settings-version {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    color: var(--muted) !important;
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .ytpa-settings-subtitle { color: var(--muted) !important; font-size: 12px !important; }
+  .ytpa-rightclick-hint { display: none; }
+  .ytpa-settings-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    button {
+      display: grid !important;
+      position: relative;
+      place-items: center;
+      width: 32px !important;
+      height: 32px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 4px !important;
+      background: transparent !important;
+      color: var(--muted) !important;
+      transform: none !important;
+      cursor: pointer;
+      &::before, &::after { content: none !important; display: none !important; }
+      &:hover { background: var(--hover) !important; color: var(--text) !important; }
+    }
+    svg { display: block; width: 18px !important; height: 18px !important; fill: currentColor; }
+  }
+  .ytpa-export-import-settings-btn__tooltip { display: none !important; }
+  .ytpa-presets {
+    margin: 0 0 12px;
+    padding: 4px 8px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+  }
+  .ytpa-presets__label { margin-bottom: 8px; color: var(--muted) !important; font-size: 12px; }
+  .ytpa-presets__buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ytpa-preset-btn {
+    flex: 1 1 48px;
+    min-width: 0;
+    height: 30px;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: transparent !important;
+    color: var(--text) !important;
+    font: inherit;
+    line-height: 28px;
+    &:hover, &.is-active { border-color: var(--accent); color: var(--accent) !important; }
+    &.is-active { background: rgb(251 114 153 / .08) !important; }
+  }
+  .ytpa-section {
+    display: flex;
+    align-items: center;
+    position: relative;
+    margin: 8px 0 0;
+    padding: 6px 8px;
+    min-height: 38px;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    color: var(--text) !important;
+    font-size: 13px;
+    font-weight: 600;
+    filter: none;
+    cursor: pointer;
+    &::after {
+      content: '';
+      position: absolute;
+      right: 10px;
+      top: 14px;
+      width: 6px;
+      height: 6px;
+      margin: 0;
+      border: 0;
+      border-right: 1.5px solid var(--muted);
+      border-bottom: 1.5px solid var(--muted);
+      transform: rotate(45deg);
+    }
+    &.is-collapsed::after { transform: rotate(-45deg); }
+  }
+  .ytpa-section__cell { display: block; }
+  .ytpa-section__label { height: auto; padding: 0; border: 0; background: none; line-height: 24px; }
+  .ytpa-section__fill { display: none; }
+  .ytpa-section-content { padding: 0 0 4px; }
+  .ytpa-section.is-collapsed + .ytpa-section-content { display: none !important; }
+  .ytpa-menuitem-description { color: var(--muted) !important; font-size: 12px; line-height: 18px; }
+  .ytpa-menuitem-key { color: var(--muted); font-size: 12px; }
+  .ytp-menuitem-toggle-checkbox {
+    position: relative;
+    flex: 0 0 auto;
+    width: 36px !important;
+    height: 20px !important;
+    margin: 0 !important;
+    border: 0;
+    border-radius: 12px;
+    background: var(--track) !important;
+    &::before { content: none !important; }
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 3px auto auto 3px;
+      width: 14px;
+      height: 14px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff !important;
+      box-shadow: 0 1px 2px rgb(0 0 0 / .15);
+      transform: none;
+    }
+  }
+  [aria-checked='true'] .ytp-menuitem-toggle-checkbox {
+    background: var(--accent) !important;
+    &::after { transform: translateX(16px); }
+  }
+  .ytp-menuitem-value, .ytpa-menuitem-input {
+    min-width: 60px;
+    max-width: 100px;
+    height: auto;
+    margin: 0;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--hover) !important;
+    color: var(--muted) !important;
+    font-size: 12px;
+    line-height: 20px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .ytp-menuitem-range-wrapper { display: block; margin: 0; padding: 0 0 8px; background: transparent !important; }
+  .ytp-menuitem-range { height: 24px; margin: 0 8px; padding: 0; }
+  input[type='range'] {
+    appearance: none !important;
+    display: block;
+    width: 100% !important;
+    height: 24px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    accent-color: var(--accent) !important;
+    &::-webkit-slider-runnable-track { height: 4px !important; border-radius: 4px; background: var(--track) !important; box-shadow: none !important; }
+    &::-webkit-slider-thumb {
+      appearance: none !important;
+      width: 14px !important;
+      height: 14px !important;
+      margin-top: -5px !important;
+      border: 0 !important;
+      border-radius: 50%;
+      background: var(--accent) !important;
+      box-shadow: 0 0 0 3px var(--panel) !important;
+    }
+  }
+  .setting-range-datalist { display: flex; justify-content: space-between; position: static; left: auto; height: auto; width: auto; margin: 2px 8px 0; }
+  .setting-range-datalist__label {
+    position: static;
+    flex: 0 1 auto;
+    width: auto;
+    height: auto;
+    margin: 0 !important;
+    padding: 0;
+    color: var(--muted) !important;
+    font-size: 11px;
+    line-height: 18px;
+    transform: none;
+    white-space: nowrap;
+    &::before { content: none !important; }
+  }
+  :focus-visible { outline: 2px solid var(--accent) !important; outline-offset: 2px; }
+}
+
+html:is(.night-mode, [dark], [data-theme='dark'], [data-bili-ambient-theme='dark']) #ytp-id-190.bpx-ambientlight-settings-menu {
+  --panel: #202124;
+  --text: #f1f2f3;
+  --muted: #a2a7ae;
+  --line: #383b40;
+  --hover: #2b2e33;
+  --track: #555b65;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ytp-id-190.bpx-ambientlight-settings-menu, .bpx-ambientlight-modal-backdrop {
+    transition: none !important;
+  }
+}
+
+html[data-ambientlight-layout-performance-improvements] :is(.reply-item, .sub-reply-item, .video-page-card-small, .video-page-special-card-small) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 90px;
+}

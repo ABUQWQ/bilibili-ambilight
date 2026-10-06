@@ -709,7 +709,7 @@ export default class Settings {
           checkbox.title = '此设置当前不可用';
         } else {
           checkbox.title = '右键点击可重置';
-          checkbox.tabindex = '0';
+          checkbox.tabIndex = 0;
         }
         sectionContent.appendChild(checkbox);
 
@@ -784,6 +784,7 @@ export default class Settings {
         const input = document.createElement('input');
         input.id = `setting-${setting.name}-range`;
         input.type = 'range';
+        input.setAttribute('aria-label', setting.label);
         input.setAttribute('colspan', '2');
         if (setting.min !== undefined) input.min = setting.min.toString();
         if (setting.max !== undefined) input.max = setting.max.toString();
@@ -1021,46 +1022,20 @@ export default class Settings {
     }
 
     for (const section of this.menuElem.querySelectorAll('.ytpa-section')) {
-      on(section, 'click', async () => {
+      section.tabIndex = 0;
+      section.setAttribute('role', 'button');
+      section.setAttribute('aria-expanded', String(!this[section.dataset.name]));
+      on(section, 'keydown', (event) => {
+        if (!['Enter', ' '].includes(event.key)) return;
+        event.preventDefault();
+        section.click();
+      });
+      on(section, 'click', () => {
         const name = section.getAttribute('data-name');
         const value = !this[name];
         this.set(name, value);
-
-        if (!value) {
-          section.classList.remove('is-collapsed');
-        }
-
-        const sectionContent = section.nextElementSibling;
-        sectionContent.style.opacity = '';
-        let startHeight = value ? sectionContent.clientHeight ?? 0 : 0;
-        let endHeight = value ? 0 : sectionContent.clientHeight ?? 0;
-        sectionContent.style.opacity = '';
-        sectionContent.style.height = `${startHeight}px`;
-        sectionContent.style.marginBottom = value ? '0' : '-5px';
-        sectionContent.style.paddingBottom = value ? '5px' : '0';
-        sectionContent.style.overflow = 'hidden';
-        sectionContent.style.position = 'relative';
-
-        await new Promise((resolve) => setTimeout(resolve, 1));
-        section.classList.add('is-collapsed-transition');
-        sectionContent.style.transition =
-          'height .4s ease-in-out, margin-bottom .4s ease-in-out, padding-bottom .4s ease-in-out';
-        sectionContent.style.height = `${endHeight}px`;
-        sectionContent.style.marginBottom = value ? '-5px' : '0';
-        sectionContent.style.paddingBottom = value ? '0' : '5px';
-
-        await new Promise((resolve) => setTimeout(resolve, 400));
-        section.classList.remove('is-collapsed-transition');
-        sectionContent.style.transition = '';
-        sectionContent.style.height = '';
-        sectionContent.style.marginBottom = '';
-        sectionContent.style.paddingBottom = '';
-        sectionContent.style.overflow = '';
-        sectionContent.style.position = '';
-
-        if (value) {
-          section.classList.add('is-collapsed');
-        }
+        section.classList.toggle('is-collapsed', value);
+        section.setAttribute('aria-expanded', String(!value));
       });
     }
 
@@ -1081,6 +1056,22 @@ export default class Settings {
       );
     if (isBilibiliPlayer) {
       this.menuElem.classList.add('bpx-ambientlight-settings-menu');
+      this.menuElem.setAttribute('role', 'dialog');
+      this.menuElem.setAttribute('aria-modal', 'true');
+      this.menuElem.setAttribute('aria-label', 'Bilibili 氛围灯设置');
+      this.menuElem.setAttribute('aria-hidden', 'true');
+      this.menuBtn.setAttribute('aria-controls', this.menuElem.id);
+      this.menuBtn.setAttribute('aria-haspopup', 'dialog');
+      const header = document.createElement('div');
+      header.className = 'bili-settings-header';
+      for (const item of this.menuElem.querySelectorAll('.ytpa-menuitem--header')) {
+        header.appendChild(item);
+      }
+      this.menuElem.prepend(header);
+      this.scrollElem = this.menuElem.querySelector('.ytp-panel');
+      for (const button of header.querySelectorAll('button[title]')) {
+        if (!button.hasAttribute('aria-label')) button.setAttribute('aria-label', button.title);
+      }
       this.menuElem.hidden = true;
       this.modalBackdropElem = document.createElement('div');
       this.modalBackdropElem.className = 'bpx-ambientlight-modal-backdrop';
@@ -1088,6 +1079,7 @@ export default class Settings {
       document.body.appendChild(this.modalBackdropElem);
       on(this.modalBackdropElem, 'click', (event) => this.onCloseMenu(event));
       document.body.appendChild(this.menuElem);
+      on(document, 'fullscreenchange', this.syncModalHost);
     } else {
       this.menuElemParent.prepend(this.menuElem);
     }
@@ -1362,7 +1354,18 @@ export default class Settings {
             await this.ambientlight.optionalFrame(true);
           }
         );
+        on(settingElem, 'contextmenu', (event) => {
+          if (event.target === inputElem) return;
+          event.preventDefault();
+          inputElem.dispatchEvent(new Event('contextmenu'));
+        });
       } else if (setting.type === 'checkbox') {
+        on(settingElem, 'keydown', (event) => {
+          if (event.target !== settingElem || !['Enter', ' '].includes(event.key)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          settingElem.click();
+        });
         on(settingElem, 'dblclick contextmenu click', async (e) => {
           if (setting.disabled) {
             e.stopPropagation();
@@ -1819,6 +1822,8 @@ export default class Settings {
       if (request !== this.menuOpenRequest) return;
     }
     if (request !== this.menuOpenRequest) return;
+    this.focusBeforeMenu = document.activeElement;
+    this.syncModalHost();
 
     if (this.modalBackdropElem) {
       const ambientRgb = getComputedStyle(document.documentElement)
@@ -1838,14 +1843,16 @@ export default class Settings {
 
     if (this.menuOnCloseScrollBottom !== -1) {
       const percentage =
-        this.menuElem.scrollHeight / this.menuOnCloseScrollHeight;
-      this.menuElem.scrollTop =
-        this.menuElem.scrollHeight -
-        this.menuElem.offsetHeight -
+        (this.scrollElem || this.menuElem).scrollHeight / this.menuOnCloseScrollHeight;
+      (this.scrollElem || this.menuElem).scrollTop =
+        (this.scrollElem || this.menuElem).scrollHeight -
+        (this.scrollElem || this.menuElem).offsetHeight -
         this.menuOnCloseScrollBottom * percentage;
     }
 
     this.menuBtn.setAttribute('aria-expanded', true);
+    this.menuElem.setAttribute('aria-hidden', 'false');
+    this.menuElem.querySelector('[tabindex="0"], button, input, [contenteditable="true"]')?.focus();
     this.updateActivePreset();
 
     if (this.ambientlight.videoPlayerElem) {
@@ -1858,6 +1865,21 @@ export default class Settings {
 
     if (this.modalBackdropElem && !this.modalEscapeHandler) {
       this.modalEscapeHandler = (event) => {
+        if (event.key === 'Tab') {
+          const items = [...this.menuElem.querySelectorAll('button, a[href], input, [tabindex="0"], [contenteditable="true"]')]
+            .filter((elem) => !elem.disabled && elem.getAttribute('aria-disabled') !== 'true' && elem.getClientRects().length);
+          const first = items[0];
+          const last = items[items.length - 1];
+          if (!first) return;
+          if (event.shiftKey && (document.activeElement === first || !this.menuElem.contains(document.activeElement))) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && (document.activeElement === last || !this.menuElem.contains(document.activeElement))) {
+            event.preventDefault();
+            first.focus();
+          }
+          return;
+        }
         if (event.key !== 'Escape') return;
         event.preventDefault();
         event.stopPropagation();
@@ -1879,14 +1901,14 @@ export default class Settings {
   closeMenuImmediately = () => {
     ++this.menuOpenRequest;
     if (!this.menuElem) return;
+    const focusWasInside = this.menuElem.contains(document.activeElement);
 
     if (this.menuElem.classList.contains('is-visible')) {
-      this.menuOnCloseScrollBottom = !this.menuElem.scrollTop
+      const scroll = this.scrollElem || this.menuElem;
+      this.menuOnCloseScrollBottom = !scroll.scrollTop
         ? -1
-        : this.menuElem.scrollHeight -
-          this.menuElem.offsetHeight -
-          this.menuElem.scrollTop;
-      this.menuOnCloseScrollHeight = this.menuElem.scrollHeight;
+        : scroll.scrollHeight - scroll.offsetHeight - scroll.scrollTop;
+      this.menuOnCloseScrollHeight = scroll.scrollHeight;
     }
     if (this.menuWarningTimeout) {
       clearTimeout(this.menuWarningTimeout);
@@ -1909,10 +1931,22 @@ export default class Settings {
     this.modalBackdropElem?.classList.remove('is-visible');
     if (this.modalBackdropElem) this.modalBackdropElem.hidden = true;
     this.menuBtn?.setAttribute('aria-expanded', false);
+    this.menuElem.setAttribute('aria-hidden', 'true');
     this.ambientlight.videoPlayerElem?.classList.remove(
       'ytp-ambientlight-settings-shown'
     );
     this.hideUpdatesBadge();
+    if (focusWasInside) {
+      const target = this.focusBeforeMenu?.isConnected ? this.focusBeforeMenu : this.menuBtn;
+      target?.focus({ preventScroll: true });
+    }
+    this.focusBeforeMenu = undefined;
+  };
+
+  syncModalHost = () => {
+    if (!this.modalBackdropElem) return;
+    const host = document.fullscreenElement || document.body;
+    if (this.menuElem.parentElement !== host) host.append(this.modalBackdropElem, this.menuElem);
   };
 
   onCloseMenu = (e) => {
@@ -1933,12 +1967,16 @@ export default class Settings {
       clearTimeout(this.onSettingsFadeOutEndTimeout);
     }
 
-    this.menuOnCloseScrollBottom = !this.menuElem.scrollTop
+    const scroll = this.scrollElem || this.menuElem;
+    this.menuOnCloseScrollBottom = !scroll.scrollTop
       ? -1
-      : this.menuElem.scrollHeight -
-        this.menuElem.offsetHeight -
-        this.menuElem.scrollTop;
-    this.menuOnCloseScrollHeight = this.menuElem.scrollHeight;
+      : scroll.scrollHeight - scroll.offsetHeight - scroll.scrollTop;
+    this.menuOnCloseScrollHeight = scroll.scrollHeight;
+    if (this.menuElem.contains(document.activeElement)) {
+      const target = this.focusBeforeMenu?.isConnected ? this.focusBeforeMenu : this.menuBtn;
+      target?.focus({ preventScroll: true });
+    }
+    this.focusBeforeMenu = undefined;
 
     on(this.menuElem, 'animationend', this.onSettingsFadeOutEnd);
     this.onSettingsFadeOutEndTimeout = setTimeout(() => {
@@ -1965,6 +2003,27 @@ export default class Settings {
     }
 
     this.hideUpdatesBadge();
+  };
+
+  rebindPlayerShell = (menuBtnParent, playerElem, previousControls) => {
+    if (playerElem) {
+      this.menuElemParent = playerElem;
+      if (this.bezelElem?.parentElement !== playerElem) playerElem.prepend(this.bezelElem);
+    }
+    if (menuBtnParent && this.menuBtnParent !== menuBtnParent) {
+      this.menuBtnParent = menuBtnParent;
+      const nativeSettingsBtn = menuBtnParent.querySelector('.bpx-player-ctrl-setting');
+      if (this.menuBtn && !menuBtnParent.contains(this.menuBtn)) {
+        if (nativeSettingsBtn) menuBtnParent.insertBefore(this.menuBtn, nativeSettingsBtn);
+        else menuBtnParent.prepend(this.menuBtn);
+      }
+    }
+    if (playerElem && this.ambientlight.videoPlayerElem !== playerElem) {
+      this.ambientlight.videoPlayerElem = playerElem;
+    }
+    if (previousControls && previousControls !== menuBtnParent) {
+      previousControls.querySelector('.bpx-ambientlight-settings-button')?.remove();
+    }
   };
 
   onSettingsFadeOutEnd = (event) => {
@@ -2033,10 +2092,12 @@ export default class Settings {
     },
     {
       names: ['frameBlending'],
+      reason: '显示帧率同步模式不使用帧混合',
       visible: () => this.frameSync !== 1,
     },
     {
       names: ['frameBlendingSmoothness'],
+      reason: '需开启帧混合，且同步方式不能为显示帧率',
       visible: () => this.frameBlending && this.frameSync !== 1,
     },
     {
@@ -2133,7 +2194,7 @@ export default class Settings {
         valueElem.classList.add('is-controlled-by-setting');
         valueElem.setAttribute(
           'title',
-          `Controlled by the "${controlledByLabel}" setting.\nManually adjusting this setting will turn off "${controlledByLabel}"`
+          `由“${controlledByLabel}”控制。手动调整会关闭“${controlledByLabel}”。`
         );
       } else {
         valueElem.classList.remove('is-controlled-by-setting');
@@ -2150,6 +2211,9 @@ export default class Settings {
         .filter((setting) => setting);
       const visible = optionalGroup.visible();
       for (const optionalSetting of optionalSettings) {
+        optionalSetting.dataset.dependencyReason = visible ? '' : (
+          optionalGroup.reason || '当前播放器模式或关联设置不满足显示条件'
+        );
         if (
           !optionalSetting.animationTimeout &&
           optionalSetting.style.display === (visible ? '' : 'none')
@@ -2157,10 +2221,21 @@ export default class Settings {
           continue;
 
         if (optionalSetting.animationTimeout) {
+          if (typeof cancelAnimationFrame === 'function') {
+            cancelAnimationFrame(optionalSetting.animationTimeout);
+          }
           clearTimeout(optionalSetting.animationTimeout);
+          optionalSetting.animationTimeout = undefined;
         }
 
         if (!isMenuOpen) {
+          optionalSetting.animationVersion =
+            (optionalSetting.animationVersion || 0) + 1;
+          optionalSetting.style.transition = '';
+          optionalSetting.style.transformOrigin = '';
+          optionalSetting.style.transform = '';
+          optionalSetting.style.marginBottom = '';
+          optionalSetting.style.willChange = '';
           optionalSetting.style.display = visible ? '' : 'none';
         } else {
           this.fadeSettingElement(optionalSetting, visible);
@@ -2170,7 +2245,31 @@ export default class Settings {
   }
 
   async fadeSettingElement(elem, visible) {
+    const animationVersion = (elem.animationVersion || 0) + 1;
+    elem.animationVersion = animationVersion;
+    if (elem.animationTimeout) {
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(elem.animationTimeout);
+      }
+      clearTimeout(elem.animationTimeout);
+      elem.animationTimeout = undefined;
+    }
+    elem.style.transition = '';
+    elem.style.transformOrigin = '';
+    elem.style.transform = '';
+    elem.style.marginBottom = '';
+    elem.style.willChange = '';
+    if (this.menuElem.classList.contains('bpx-ambientlight-settings-menu') ||
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      elem.style.display = visible ? '' : 'none';
+      return;
+    }
+
     await new Promise((resolve) => {
+      if (elem.animationVersion !== animationVersion) {
+        resolve();
+        return;
+      }
       elem.style.display = elem.classList.contains('ytp-menuitem')
         ? 'flex'
         : 'block'; // overrides .ytpa-section.is-collapsed selector
@@ -2180,6 +2279,10 @@ export default class Settings {
       elem.style.transform = visible ? 'scaleY(0%)' : 'scaleY(100%)';
 
       elem.animationTimeout = raf(() => {
+        if (elem.animationVersion !== animationVersion) {
+          resolve();
+          return;
+        }
         elem.style.transition =
           'transform .3s ease-in-out, margin-bottom .3s ease-in-out';
         elem.style.willChange = 'transform';
@@ -2193,6 +2296,10 @@ export default class Settings {
 
         elem.animationTimeout = setTimeout(() => {
           elem.animationTimeout = undefined;
+          if (elem.animationVersion !== animationVersion) {
+            resolve();
+            return;
+          }
           if (elem.style.transition === '') return;
 
           elem.style.display = visible ? '' : 'none';

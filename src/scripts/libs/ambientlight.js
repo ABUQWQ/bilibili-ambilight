@@ -41,6 +41,7 @@ import Theming from './theming';
 import Stats from './stats';
 import { getNodeTreeString, getPageElems } from './errors/dom';
 import { installDiagnostics, report } from './diagnostics';
+import { handleAmbientlightKeyDown } from './keyboard';
 
 installDiagnostics();
 
@@ -246,6 +247,13 @@ export default class Ambientlight {
     this.cancelScheduledRequestVideoFrame();
 
     if (this.videoElem && this.videoElem !== videoElem) {
+      this.resetVideoParentElemStyle();
+      for (const name in this.videoListeners) {
+        off(this.videoElem, name, this.videoListeners[name]);
+      }
+      clearTimeout(this.handleVideoErrorTimeout);
+      this.handleVideoErrorTimeout = undefined;
+      this.clear();
       this.videoObserver?.unobserve(this.videoElem);
       this.videoResizeObserver?.unobserve(this.videoElem);
     }
@@ -254,6 +262,71 @@ export default class Ambientlight {
     this.videoElem = videoElem;
     this.applyChromiumBugDirectVideoOverlayWorkaround();
     if (initListeners) this.initVideoListeners();
+  }
+
+  rebindPlayerParts(parts) {
+    const previousPlayer = this.videoPlayerElem;
+    const previousVideoArea = this.videoContainerElem;
+    const previousControls = this.settingsMenuBtnParent;
+    if (previousPlayer && this.ytdWatchElem === previousPlayer) {
+      for (const name in this.playerListeners) off(previousPlayer, name, this.playerListeners[name]);
+      this.ytdWatchElem = parts.videoPlayerElem;
+    }
+    if (this.ytdAppElem === previousPlayer) this.ytdAppElem = parts.videoPlayerElem;
+    this.videoPlayerElem = parts.videoPlayerElem || this.videoElem?.closest('.bpx-player-container');
+    this.videoContainerElem = parts.videoAreaElem || this.videoPlayerElem?.querySelector('.bpx-player-video-area');
+    this.videoAreaElem = this.videoContainerElem;
+    this.ytdPlayerElem = parts.videoElem?.closest('.bpx-player-primary-area');
+    this.settingsMenuBtnParent =
+      parts.controlRightElem ||
+      this.videoPlayerElem?.querySelector('.bpx-player-control-bottom-right');
+
+    if (parts.videoElem && parts.videoElem !== this.videoElem) {
+      this.initVideoElem(parts.videoElem);
+    }
+
+    if (this.videoPlayerResizeObserver && previousPlayer !== this.videoPlayerElem) {
+      if (previousPlayer) this.videoPlayerResizeObserver.unobserve(previousPlayer);
+      if (this.videoPlayerElem) this.videoPlayerResizeObserver.observe(this.videoPlayerElem);
+    }
+
+    if (this.videoResizeObserver && this.videoElem) {
+      this.videoResizeObserver.observe(this.videoElem);
+    }
+
+    if (previousPlayer !== this.videoPlayerElem) {
+      this.settings?.closeMenuImmediately();
+      previousPlayer?.classList.remove('ytp-ambientlight-settings-shown');
+      this._thumbnailOverlayElem = undefined;
+      this.videoPlayerObserver?.disconnect();
+      this.videoPlayerObserver?.observe(this.videoPlayerElem, {
+        attributes: true,
+        attributeFilter: ['class', 'data-screen'],
+      });
+      this.playerContainersObserver?.disconnect();
+      for (const elem of new Set([
+        this.playerTheaterContainerElem,
+        this.playerSmallContainerElem,
+      ])) {
+        if (elem) this.playerContainersObserver?.observe(elem, { childList: true });
+      }
+      this.videoOverlay?.elem?.remove();
+      this.videoDebandingElem?.remove();
+    }
+    if (previousVideoArea !== this.videoContainerElem) {
+      this.buffersCleared = true;
+    }
+    if (this.settings) {
+      this.settings.rebindPlayerShell(
+        this.settingsMenuBtnParent,
+        this.videoPlayerElem,
+        previousControls
+      );
+    }
+
+    this.sizesChanged = true;
+    this.sizesInvalidated = true;
+    this.buffersCleared = true;
   }
 
   // FireFox workaround: WebGLParent::RecvReadPixels is slow when reading from a HtmlCanvasElement/OffscreenCanvas (performance scales linear with the amount of pixels to be read)
@@ -977,7 +1050,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
 
     this.initAverageVideoFramesDifferenceListeners();
 
-    const videoPlayerObserver = new MutationObserver(
+    this.videoPlayerObserver = new MutationObserver(
       wrapErrorHandler(
         async function videoPlayerMutation() {
           const viewChanged = await this.updateView();
@@ -1002,19 +1075,19 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     );
     this.updateIsVideoHiddenOnWatchPage();
 
-    videoPlayerObserver.observe(this.videoPlayerElem, {
+    this.videoPlayerObserver.observe(this.videoPlayerElem, {
       attributes: true,
       attributeFilter: ['class', 'data-screen'],
     });
     if (this.thumbnailOverlayElem) {
-      videoPlayerObserver.observe(this.thumbnailOverlayElem, {
+      this.videoPlayerObserver.observe(this.thumbnailOverlayElem, {
         attributes: true,
         attributeFilter: ['style'],
       });
     }
 
     // When the video moves between the small and theater views
-    const playerContainersObserver = new MutationObserver(
+    const playerContainersObserver = this.playerContainersObserver = new MutationObserver(
       wrapErrorHandler(
         async function playerContainerMutation() {
           await this.updateView();
@@ -1153,32 +1226,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     }
   };
 
-  handleKeyDown = async (e) => {
-    if (!this.isOnVideoPage) return;
-    if (document.activeElement) {
-      const el = document.activeElement;
-      const tag = el.tagName;
-      const inputs = ['INPUT', 'SELECT', 'TEXTAREA'];
-      if (
-        inputs.indexOf(tag) !== -1 ||
-        (el.getAttribute('contenteditable') != null &&
-          el.getAttribute('contenteditable') !== 'false')
-      ) {
-        return;
-      }
-    }
-    if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
-
-    const key = e.key?.toUpperCase();
-    const keys = this.settings.getKeys();
-    if (key === keys.enabled) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.repeat) return;
-    }
-
-    await this.onKeyPressed(key);
-  };
+  handleKeyDown = handleAmbientlightKeyDown.bind(this);
 
   handleVideoFocus = () => {
     if (!this.settings.enabled || !this.isOnVideoPage || !this.ytdAppElem)
@@ -1610,6 +1658,8 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
   clear() {
     this.clearTime = performance.now();
     this.barDetection.clear();
+    this.pageGlowCtx?.clearRect(0, 0, this.pageGlowCanvas.width, this.pageGlowCanvas.height);
+    this.lastPageAmbientTintUpdate = 0;
 
     // Clear canvasses
     const canvasses = [];
@@ -2248,6 +2298,28 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
   }
 
   updatePageAmbientTint() {
+    if (this.isHidden || !this.settings.enabled || document.hidden) return;
+    if (document.fullscreenElement || ['full', 'web'].includes(this.videoPlayerElem?.dataset.screen)) return;
+    const source = this.projectorBuffer?.elem;
+    if (!source || !source.width || !source.height) return;
+
+    // Keep the large page canvas in step with the renderer. Expensive colour
+    // extraction remains throttled below, so page glow motion is not capped at
+    // the old 4 Hz tint-sampling interval.
+    if (this.pageGlowCtx && source !== this.pageGlowCanvas) {
+      try {
+        this.pageGlowCtx.drawImage(
+          source,
+          0,
+          0,
+          this.pageGlowCanvas.width,
+          this.pageGlowCanvas.height
+        );
+      } catch {
+        // Source not ready yet; the next frame will retry.
+      }
+    }
+
     const now = performance.now();
     if (
       this.lastPageAmbientTintUpdate &&
@@ -2255,23 +2327,6 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     )
       return;
     this.lastPageAmbientTintUpdate = now;
-
-    const source = this.projectorBuffer?.elem;
-    if (!source || !source.width || !source.height) return;
-
-      if (this.pageGlowCtx && source !== this.pageGlowCanvas) {
-        try {
-          this.pageGlowCtx.drawImage(
-            source,
-            0,
-            0,
-            this.pageGlowCanvas.width,
-            this.pageGlowCanvas.height
-          );
-        } catch {
-          // Source not ready yet; the next tick will retry.
-        }
-      }
 
     try {
       if (!this.pageAmbientTintCanvas) {
@@ -2289,8 +2344,6 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       ctx.clearRect(0, 0, 8, 8);
       // Draw the video as a 3x3 grid so the page glow keeps the video's own
       // colour structure instead of collapsing into one flat tint.
-      ctx.drawImage(source, 0, 0, 8, 8);
-      ctx.clearRect(0, 0, 8, 8);
       ctx.drawImage(source, 0, 0, 3, 3);
       const data = ctx.getImageData(0, 0, 3, 3).data;
 
@@ -2318,8 +2371,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
         Math.max(0, Math.min(255, Math.round(128 + (channel - 128) * saturationBoost)))
       );
 
-      const isNightMode =
-        document.documentElement.classList.contains('night-mode');
+      const isNightMode = this.theming.isDarkTheme();
       const luminance =
         avg[0] * 0.2126 + avg[1] * 0.7152 + avg[2] * 0.0722;
       const isDarkTint = luminance < 150;
@@ -2328,8 +2380,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       if (!isNightMode && isDarkTint) {
         tint = tint.map((channel) => Math.round(channel * 0.42 + 236 * 0.58));
       }
-      const rootStyle = document.documentElement.style;
-      rootStyle.setProperty('--bili-ambient-rgb', tint.join(' '));
+      this.setPageAmbientProperty('--bili-ambient-rgb', tint.join(' '));
 
       // Project the 3x3 grid of sampled colours onto a rect that is scaled up
       // around the video, producing a giant blurred copy of the frame that
@@ -2353,15 +2404,15 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
         const x = Math.round(cx + (col - 1) * (gw / 3));
         const y = Math.round(cy + (row - 1) * (gh / 3));
         const c = cells[i];
-        rootStyle.setProperty(
+        this.setPageAmbientProperty(
           `--bili-glow-c${i}`,
           `${boost(c[0])} ${boost(c[1])} ${boost(c[2])}`
         );
-        rootStyle.setProperty(`--bili-glow-x${i}`, `${x}px`);
-        rootStyle.setProperty(`--bili-glow-y${i}`, `${y}px`);
+        this.setPageAmbientProperty(`--bili-glow-x${i}`, `${x}px`);
+        this.setPageAmbientProperty(`--bili-glow-y${i}`, `${y}px`);
       }
-      rootStyle.setProperty('--bili-glow-rx', `${radiusX}px`);
-      rootStyle.setProperty('--bili-glow-ry', `${radiusY}px`);
+      this.setPageAmbientProperty('--bili-glow-rx', `${radiusX}px`);
+      this.setPageAmbientProperty('--bili-glow-ry', `${radiusY}px`);
 
       if (this.pageGlowElem) {
         // Keep the wash well below full strength so the boundary where opaque
@@ -2379,6 +2430,31 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     } catch {
       // Cross-origin canvas reads are already handled by getImageDataAllowed.
     }
+  }
+
+  setPageAmbientProperty(name, value) {
+    const style = document.documentElement.style;
+    this.pageAmbientProperties ||= new Map();
+    let entry = this.pageAmbientProperties.get(name);
+    // If another owner changed the value meanwhile, retain that new value
+    // rather than restoring a stale snapshot when this extension closes.
+    if (!entry || style.getPropertyValue(name) !== entry.written) {
+      entry = { value: style.getPropertyValue(name), priority: style.getPropertyPriority(name) };
+      this.pageAmbientProperties.set(name, entry);
+    }
+    if (style.getPropertyValue(name) !== value) style.setProperty(name, value);
+    entry.written = value;
+  }
+
+  restorePageAmbientProperties() {
+    const style = document.documentElement.style;
+    for (const [name, entry] of this.pageAmbientProperties || []) {
+      if (style.getPropertyValue(name) !== entry.written) continue;
+      if (entry.value) style.setProperty(name, entry.value, entry.priority);
+      else style.removeProperty(name);
+    }
+    this.pageAmbientProperties?.clear();
+    document.documentElement.removeAttribute('data-bili-ambient-dark-tint');
   }
 
   updateStyles() {
@@ -4061,6 +4137,9 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
 
   async hide() {
     report('hide-requested');
+    this.settings?.closeMenuImmediately();
+    this.cancelScheduledRequestVideoFrame();
+    this.restorePageAmbientProperties();
     if (this.isHidden) return;
     this.isHidden = true;
 

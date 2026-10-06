@@ -34,8 +34,18 @@ const waitForElement = (selector, timeout = 15000) =>
       resolve(existing);
       return;
     }
+    if (selector.includes('bpx-') && document.querySelector('.bpx-legacy-browser-container')) {
+      reject(new Error('Bilibili 正在使用旧版播放器，氛围灯暂不支持此播放器结构。请确认浏览器能正常播放视频。'));
+      return;
+    }
 
     const observer = new MutationObserver(() => {
+      if (selector.includes('bpx-') && document.querySelector('.bpx-legacy-browser-container')) {
+        observer.disconnect();
+        clearTimeout(timeoutId);
+        reject(new Error('Bilibili 正在使用旧版播放器，当前浏览器的视频解码支持不足，氛围灯无法绑定。请先确认浏览器能正常播放视频。'));
+        return;
+      }
       const elem = document.querySelector(selector);
       if (!elem) return;
       observer.disconnect();

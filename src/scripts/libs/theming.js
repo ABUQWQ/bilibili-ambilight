@@ -4,10 +4,30 @@ export default class Theming {
     this.ambientlight = ambientlight;
   }
 
-  initListeners() {}
+  initListeners() {
+    if (this.observer) return;
+    this.updateTheme();
+    this.observer = new MutationObserver(() => {
+      if (!this.updateTheme()) return;
+      this.ambientlight.lastPageAmbientTintUpdate = 0;
+      this.ambientlight.updateStyles();
+      if (this.ambientlight.settings?.enabled && !this.ambientlight.isHidden) {
+        this.ambientlight.optionalFrame();
+      }
+    });
+    this.observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'dark', 'data-theme'],
+    });
+  }
 
   isDarkTheme() {
-    return document.documentElement.getAttribute('dark') != null;
+    const html = document.documentElement;
+    return (
+      html.classList.contains('night-mode') ||
+      html.getAttribute('dark') != null ||
+      html.getAttribute('data-theme') === 'dark'
+    );
   }
 
   shouldBeDarkTheme(enabledAndVisible) {
@@ -16,6 +36,10 @@ export default class Theming {
   }
 
   updateTheme() {
-    return false;
+    const theme = this.isDarkTheme() ? 'dark' : 'light';
+    if (this.theme === theme) return false;
+    this.theme = theme;
+    document.documentElement.setAttribute('data-bili-ambient-theme', theme);
+    return true;
   }
 }

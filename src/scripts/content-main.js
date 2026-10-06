@@ -61,7 +61,10 @@ const waitForPlayer = (timeout = 20000) =>
 
     const timeoutId = setTimeout(() => {
       observer.disconnect();
-      reject(new Error('等待 Bilibili 播放器超时'));
+      const parts = getPlayerParts();
+      reject(new Error(parts.videoElem
+        ? '检测到视频，但未找到支持的 Bilibili 播放器外壳或控制栏。请检查是否启用了替代播放器。'
+        : '播放器尚未加载视频，请确认视频可播放后刷新页面。'));
     }, timeout);
   });
 
@@ -69,6 +72,8 @@ let lastUrl = location.href;
 let lastVideoElem;
 let lastVideoSrc = '';
 let routeObserver;
+let routeUpdateRunning = false;
+let routeUpdatePending = false;
 
 const updateVideoPageState = wrapErrorHandler(async () => {
   const ambientlight = window.ambientlight;
@@ -86,7 +91,7 @@ const updateVideoPageState = wrapErrorHandler(async () => {
       controlRightElem: !!parts.controlRightElem,
     },
   });
-  if (!parts.videoElem || !isBilibiliVideoPage()) {
+  if (!parts.videoElem || !parts.videoPlayerElem || !parts.videoAreaElem || !parts.controlRightElem || !isBilibiliVideoPage()) {
     if (ambientlight.isOnVideoPage) {
       report('leaving-video-page');
       ambientlight.isOnVideoPage = false;
@@ -97,9 +102,16 @@ const updateVideoPageState = wrapErrorHandler(async () => {
 
   if (parts.videoElem !== ambientlight.videoElem) {
     report('rebinding-video-element', parts.videoElem);
-    ambientlight.initVideoElem(parts.videoElem);
+    ambientlight.rebindPlayerParts(parts);
     lastVideoElem = parts.videoElem;
     lastVideoSrc = parts.videoElem.currentSrc || parts.videoElem.src || '';
+  } else if (
+    parts.videoPlayerElem !== ambientlight.videoPlayerElem ||
+    parts.videoAreaElem !== ambientlight.videoContainerElem ||
+    parts.controlRightElem !== ambientlight.settingsMenuBtnParent
+  ) {
+    report('rebinding-player-shell', parts);
+    ambientlight.rebindPlayerParts(parts);
   } else if (
     lastVideoSrc !== (parts.videoElem.currentSrc || parts.videoElem.src || '')
   ) {
@@ -117,6 +129,22 @@ const updateVideoPageState = wrapErrorHandler(async () => {
   if (ambientlight.settings?.enabled) await ambientlight.optionalFrame();
 });
 
+// Only one async reconciliation owns the renderer at a time. Recheck the
+// latest DOM after it completes instead of letting stale tasks run in parallel.
+const requestVideoPageUpdate = wrapErrorHandler(async () => {
+  routeUpdatePending = true;
+  if (routeUpdateRunning) return;
+  routeUpdateRunning = true;
+  try {
+    while (routeUpdatePending) {
+      routeUpdatePending = false;
+      await updateVideoPageState();
+    }
+  } finally {
+    routeUpdateRunning = false;
+  }
+});
+
 const setupRouteWatcher = () => {
   if (routeObserver) return;
 
@@ -124,12 +152,17 @@ const setupRouteWatcher = () => {
     wrapErrorHandler(() => {
       const urlChanged = location.href !== lastUrl;
       const videoChanged = lastVideoElem !== document.querySelector('#bilibili-player .bpx-player-video-wrap video');
-      if (!urlChanged && !videoChanged) return;
+      const parts = getPlayerParts();
+      const light = window.ambientlight;
+      const shellChanged = parts.videoPlayerElem !== light?.videoPlayerElem ||
+        parts.videoAreaElem !== light?.videoContainerElem ||
+        parts.controlRightElem !== light?.settingsMenuBtnParent;
+      if (!urlChanged && !videoChanged && !shellChanged) return;
       lastUrl = location.href;
-      updateVideoPageState();
+      requestVideoPageUpdate();
     }, true)
   );
-  routeObserver.observe(document.head, {
+  routeObserver.observe(document.documentElement, {
     childList: true,
     subtree: true,
     characterData: true,
@@ -137,13 +170,15 @@ const setupRouteWatcher = () => {
 
   on(window, 'popstate hashchange', () => {
     lastUrl = location.href;
-    updateVideoPageState();
+    requestVideoPageUpdate();
   });
 
   setInterval(() => {
-    if (location.href !== lastUrl) {
+    const parts = getPlayerParts();
+    const source = parts.videoElem?.currentSrc || parts.videoElem?.src || '';
+    if (location.href !== lastUrl || source !== lastVideoSrc) {
       lastUrl = location.href;
-      updateVideoPageState();
+      requestVideoPageUpdate();
     }
   }, 1000);
 };
