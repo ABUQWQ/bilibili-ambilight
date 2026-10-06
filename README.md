@@ -92,3 +92,17 @@ npm run build
 - 如有需要，附上调试构建导出的诊断 JSON。
 
 仓库地址：[ABUQWQ/bilibili-ambilight](https://github.com/ABUQWQ/bilibili-ambilight)
+
+## 开源来源与许可证
+
+本项目基于 Wessel Kroos 的 [Ambient light for YouTube](https://github.com/WesselKroos/youtube-ambilight)
+移植，保留其光晕渲染和设置机制，并针对 Bilibili 投稿视频页调整播放器生命周期、
+页面布局、主题和设置面板。本项目为独立维护的非官方移植，不代表原项目或 Bilibili 官方。
+
+本项目采用 **MIT License**（SPDX 标识：`MIT`）。完整授权条款和原作者版权声明见
+[LICENSE](LICENSE)，第三方项目来源、版本和许可证见
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。分发源码或构建包时，请保留相应版权声明、
+许可证及免责条款；第三方组件仍按各自许可证授权。
+
+CRX 私钥仅用于包签名和保持扩展 ID 稳定，不是开源许可证或官方认证证书。
+它不改变代码的授权条件，且不得提交到公开仓库或放入发布附件。

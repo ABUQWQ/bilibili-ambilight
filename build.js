@@ -24,5 +24,7 @@ run('node_modules/sass/sass.js', [
 cpSync('src/styles/options.css', 'dist/styles/options.css');
 cpSync('src/options.html', 'dist/options.html');
 cpSync('src/images', 'dist/images', { recursive: true });
+cpSync('LICENSE', 'dist/LICENSE');
+cpSync('THIRD-PARTY-NOTICES.md', 'dist/THIRD-PARTY-NOTICES.md');
 
 await import('./manifest-copy.js');
